@@ -1,11 +1,12 @@
 FROM node:18-alpine
 
-WORKDIR /conference-cms-frontend
+WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
 
 COPY . .
 
-CMD ["npm", "start"]
+RUN chmod +x Docker/entrypoint.sh  
+
+ENTRYPOINT ["Docker/entrypoint.sh"]
