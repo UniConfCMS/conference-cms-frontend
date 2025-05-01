@@ -1,6 +1,4 @@
-import React from 'react';
-
-const Navbar: React.FC = () => {
+const Navbar = () => {
     return (
         <nav>
             <h1>Navbar will be here</h1>
