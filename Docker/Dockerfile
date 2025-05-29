@@ -6,7 +6,11 @@ COPY package*.json ./
 
 RUN npm install
 
+RUN npm install react-router-dom @types/react-router-dom
+
+
 COPY . .
+
 
 EXPOSE 3000
 
