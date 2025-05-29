@@ -3,9 +3,9 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MainView } from './containers/MainView';
 import { FAQView } from './containers/FaqView';
-import { NewspaperView } from './containers/NewspaperView';
-import { DetailNewspaperView } from './containers/NewspaperView/DetailNewspaperView';
-import { CreateNewspaperView } from './containers/NewspaperView/CreateNewspaperView';
+import { ConferenceView } from './containers/ConferenceView';
+import { DetailConferenceView } from './containers/ConferenceView/DetailConferenceView';
+import { CreateNewspaperView } from './containers/ConferenceView/CreateNewspaperView';
 
 function App() {
   return (
@@ -13,8 +13,8 @@ function App() {
       <Routes>
         <Route path='*' element={<MainView />} />
         <Route path="/faq/" element={<FAQView />} />
-        <Route path='/newspaper/' element={<NewspaperView />} />
-        <Route path="/newspaper/:id" element={<DetailNewspaperView />} />
+        <Route path='/newspaper/' element={<ConferenceView />} />
+        <Route path="/newspaper/:id" element={<DetailConferenceView />} />
         <Route path="/newspaper/create" element={<CreateNewspaperView />} />
       </Routes>
     </BrowserRouter>
