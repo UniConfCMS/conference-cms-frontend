@@ -1,27 +1,23 @@
 import React from 'react';
-import logo from './assets/logo.svg';
-import './styles/App.css';
-import Navbar from './components/Navbar';
+
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { MainView } from './containers/MainView';
+import { FAQView } from './containers/FaqView';
+import { NewspaperView } from './containers/NewspaperView';
+import { DetailNewspaperView } from './containers/NewspaperView/DetailNewspaperView';
+import { CreateNewspaperView } from './containers/NewspaperView/CreateNewspaperView';
 
 function App() {
   return (
-    <div className="App">
-      <Navbar />
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path='*' element={<MainView />} />
+        <Route path="/faq/" element={<FAQView />} />
+        <Route path='/newspaper/' element={<NewspaperView />} />
+        <Route path="/newspaper/:id" element={<DetailNewspaperView />} />
+        <Route path="/newspaper/create" element={<CreateNewspaperView />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
