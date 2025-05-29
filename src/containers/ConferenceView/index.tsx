@@ -9,7 +9,6 @@ export const ConferenceView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to fetch conferences from API
   const fetchConferences = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -36,12 +35,12 @@ export const ConferenceView: React.FC = () => {
     }
   };
 
-  // Load data on component mount
+  
   useEffect(() => {
     fetchConferences();
   }, []);
 
-  // Show loading state
+  
   if (loading) {
     return (
       <DefaultLayout>
@@ -54,7 +53,7 @@ export const ConferenceView: React.FC = () => {
     );
   }
 
-  // Show error state
+  
   if (error) {
     return (
       <DefaultLayout>
@@ -78,12 +77,7 @@ export const ConferenceView: React.FC = () => {
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-3xl font-bold">Conferences</h1>
-          <button
-            onClick={() => navigate("/newspaper/create")}
-            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition"
-          >
-            Create Article
-          </button>
+        
         </div>
         
         {conferences.length === 0 ? (
