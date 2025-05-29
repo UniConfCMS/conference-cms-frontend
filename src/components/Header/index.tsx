@@ -1,5 +1,5 @@
 import React from "react";
-import logo from "../../assets/logo.svg";
+import logo from "../../assets/asd.svg";
 import { Link } from "react-router-dom";
 
 export const Header = () => {
@@ -8,17 +8,17 @@ export const Header = () => {
       
       <div className="flex items-center space-x-3">
         <img src={logo} alt="Logo" className="h-10 w-10" />
-        <span className="text-xl font-semibold select-none">NEWSPAPER GROUP SPACE</span>
+        <span className="text-xl font-semibold select-none">UniConf Conference</span>
       </div>
 
       <nav className="space-x-6 text-lg">
         <Link to="/" className="hover:gray-300">Home</Link>
         <Link to="/faq/" className="hover:gray-300">FAQ</Link>
-        <Link to="/newspaper/" className="hover:gray-300">Newspaper</Link>
+        <Link to="/conferences/" className="hover:gray-300">Conferences</Link>
       </nav>
 
       <div className="flex items-center space-x-3 cursor-pointer">
-        <span className="font-semibold select-none">sh1xyyz</span>
+        <span className="font-semibold select-none">user</span>
         <img
           src="https://i.pravatar.cc/40"
           alt="User Avatar"

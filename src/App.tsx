@@ -5,7 +5,6 @@ import { MainView } from './containers/MainView';
 import { FAQView } from './containers/FaqView';
 import { ConferenceView } from './containers/ConferenceView';
 import { DetailConferenceView } from './containers/ConferenceView/DetailConferenceView';
-import { CreateNewspaperView } from './containers/ConferenceView/CreateNewspaperView';
 
 function App() {
   return (
@@ -13,9 +12,8 @@ function App() {
       <Routes>
         <Route path='*' element={<MainView />} />
         <Route path="/faq/" element={<FAQView />} />
-        <Route path='/newspaper/' element={<ConferenceView />} />
-        <Route path="/newspaper/:id" element={<DetailConferenceView />} />
-        <Route path="/newspaper/create" element={<CreateNewspaperView />} />
+        <Route path='/conferences/' element={<ConferenceView />} />
+        <Route path="/conferences/:id" element={<DetailConferenceView />} />
       </Routes>
     </BrowserRouter>
   );
