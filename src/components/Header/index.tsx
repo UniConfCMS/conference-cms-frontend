@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import LoginModal from '../LoginModal/index';
-import logo from '../../assets/logo.svg';
+import logo from "../../assets/asd.svg";
 import { Link } from 'react-router-dom';
 
 export const Header: React.FC = () => {
@@ -18,9 +18,9 @@ export const Header: React.FC = () => {
             </div>
 
             <nav className="space-x-6 text-lg">
-                <Link to="/" className="text-gray-300 hover:text-white">Home</Link>
-                <Link to="/faq/" className="text-gray-300 hover:text-white">FAQ</Link>
-                <Link to="/newspaper/" className="text-gray-300 hover:text-white">Newspaper</Link>
+              <Link to="/" className="hover:gray-300">Home</Link>
+              <Link to="/faq/" className="hover:gray-300">FAQ</Link>
+              <Link to="/conferences/" className="hover:gray-300">Conferences</Link>
             </nav>
 
             {user ? (
