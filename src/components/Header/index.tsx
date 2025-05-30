@@ -1,15 +1,15 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext, AuthContextType } from '../../context/AuthContext';
-import LoginModal from '../LoginModal/index';
+import LoginModal from '../LoginModal';
 import logo from '../../assets/logo.svg';
 import { Link } from 'react-router-dom';
 
 export const Header: React.FC = () => {
-    const { user } = useContext(AuthContext) as AuthContextType;
+    const { user, isLoading } = useContext(AuthContext) as AuthContextType;
     const [isLoginOpen, setIsLoginOpen] = useState<boolean>(false);
 
     return (
-        <header className="flex items-center justify-around px-6 py-4 border-gray border-gray-600 border-b">
+        <header className="flex items-center justify-around px-6 py-4 border-gray border-gray-600 border-b bg-[#1a1a26]">
             <div className="flex items-center space-x-3">
                 <img src={logo} alt="Logo" className="h-10 w-10" />
                 <span className="text-xl font-semibold select-none text-white">
@@ -23,7 +23,9 @@ export const Header: React.FC = () => {
                 <Link to="/newspaper/" className="text-gray-300 hover:text-white">Newspaper</Link>
             </nav>
 
-            {user ? (
+            {isLoading ? (
+                <span className="text-gray-400 font-semibold select-none">Loading...</span>
+            ) : user ? (
                 <Link to="/panel" className="flex items-center space-x-3">
                     <span className="font-semibold select-none text-white">{user.name}</span>
                     <img
