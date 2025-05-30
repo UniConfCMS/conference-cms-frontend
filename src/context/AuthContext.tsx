@@ -71,6 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(null);
             setToken(null);
             localStorage.removeItem('token');
+            window.location.href = '/';
         } catch (err) {
             console.error('Logout error:', err);
         }
