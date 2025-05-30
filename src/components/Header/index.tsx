@@ -1,11 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { AuthContext } from '../../context/AuthContext';
+import { AuthContext, AuthContextType } from '../../context/AuthContext';
 import LoginModal from '../LoginModal/index';
 import logo from '../../assets/logo.svg';
 import { Link } from 'react-router-dom';
 
 export const Header: React.FC = () => {
-    const { user, logout } = useContext(AuthContext);
+    const { user } = useContext(AuthContext) as AuthContextType;
     const [isLoginOpen, setIsLoginOpen] = useState<boolean>(false);
 
     return (
@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-3">
                 <img src={logo} alt="Logo" className="h-10 w-10" />
                 <span className="text-xl font-semibold select-none text-white">
-                    ANIMAL SCIENCE CONSORTIUM
+                    NEWSPAPER GROUP SPACE
                 </span>
             </div>
 
@@ -24,14 +24,14 @@ export const Header: React.FC = () => {
             </nav>
 
             {user ? (
-                <div className="flex items-center space-x-3 cursor-pointer" onClick={logout}>
+                <Link to="/panel" className="flex items-center space-x-3">
                     <span className="font-semibold select-none text-white">{user.name}</span>
                     <img
                         src="https://i.pravatar.cc/40"
                         alt="User Avatar"
                         className="h-10 w-10 rounded-full object-cover"
                     />
-                </div>
+                </Link>
             ) : (
                 <button
                     onClick={() => setIsLoginOpen(true)}
