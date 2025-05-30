@@ -3,6 +3,7 @@ import { DefaultLayout } from "../../components/DefaultLayout";
 import { useNavigate } from "react-router-dom";
 import { Conference } from "../../interfaces/Conference";
 import logoImage from "../../assets/asd.svg";
+import { Wysiwyg } from "../../components/Wyswig";
 
 const testimonials = [
   {
@@ -68,6 +69,7 @@ export const MainView = () => {
     <DefaultLayout>
       <main className="max-w-7xl mx-auto px-6 py-10">
         {/* Welcome section with logo */}
+
         <section className="text-center bg-[#1a1a26] rounded-lg px-8 py-12 mb-16">
           <div className="flex flex-col items-center mb-6">
             <div className="mb-4">
