@@ -89,7 +89,7 @@ export const ConferenceView: React.FC = () => {
             {conferences.map((conference: Conference) => (
               <article
                 key={conference.id}
-                onClick={() => navigate(`/newspaper/${conference.id}`)}
+                onClick={() => navigate(`/conferences/${conference.id}`)}
                 className="bg-[#1a1a26] rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
               >
                 <h2 className="text-xl font-semibold mb-2">
