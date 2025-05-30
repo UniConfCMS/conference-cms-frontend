@@ -4,7 +4,7 @@ import InviteUserModal from '../InviteUserModal/index';
 import { useNavigate } from 'react-router-dom';
 
 const UserPanel: React.FC = () => {
-    const { user, logout, token } = useContext(AuthContext);
+    const { user, logout, token, updateUser } = useContext(AuthContext);
     const navigate = useNavigate();
     const [isInviteModalOpen, setIsInviteModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
@@ -51,8 +51,8 @@ const UserPanel: React.FC = () => {
             setSuccess('Account deleted successfully!');
             setTimeout(() => {
                 logout();
-                window.location.href = "/";
-            }, 1000);
+                navigate('/login');
+            }, 2000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
@@ -64,21 +64,120 @@ const UserPanel: React.FC = () => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
-        console.log('Assign role:', selectedRole, 'to email:', selectedEmail);
+        setIsLoading(true);
+
+        try {
+            const response = await fetch('http://localhost:8000/api/super-admin/users/assign-role', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                credentials: 'include',
+                body: JSON.stringify({ email: selectedEmail, role: selectedRole }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to assign role');
+            }
+
+            setSuccess('Role assigned successfully!');
+            setSelectedEmail('');
+            setSelectedRole('admin');
+            setTimeout(() => setIsAssignRoleModalOpen(false), 2000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleChangeName = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
-        console.log('Change name to:', name);
+        setIsLoading(true);
+
+        if (!name.trim()) {
+            setError('Name cannot be empty');
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8000/api/admin/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                credentials: 'include',
+                body: JSON.stringify({ name }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to update name');
+            }
+
+            const data = await response.json();
+            updateUser({ ...user, name });
+            setSuccess('Name updated successfully!');
+            setName('');
+            setTimeout(() => setIsChangeNameModalOpen(false), 2000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
-        console.log('Change password:', { currentPassword, newPassword });
+        setIsLoading(true);
+
+        if (newPassword !== passwordConfirmation) {
+            setError('Passwords do not match');
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8000/api/user/password', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    password: newPassword,
+                    password_confirmation: passwordConfirmation,
+                }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to change password');
+            }
+
+            setSuccess('Password changed successfully!');
+            setCurrentPassword('');
+            setNewPassword('');
+            setPasswordConfirmation('');
+            setTimeout(() => setIsChangePasswordModalOpen(false), 2000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -194,6 +293,15 @@ const UserPanel: React.FC = () => {
                             <h2 className="text-2xl font-bold mb-4 text-white">Assign Role</h2>
                             {error && <p className="text-red-500 mb-4">{error}</p>}
                             {success && <p className="text-green-600 mb-4">{success}</p>}
+                            {isLoading && (
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    <span className="text-gray-400">Assigning...</span>
+                                </div>
+                            )}
                             <form onSubmit={handleAssignRole}>
                                 <div className="mb-4">
                                     <label htmlFor="email" className="block text-sm font-medium text-gray-300">
@@ -228,12 +336,14 @@ const UserPanel: React.FC = () => {
                                         type="button"
                                         onClick={() => setIsAssignRoleModalOpen(false)}
                                         className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
+                                        disabled={isLoading}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                        disabled={isLoading}
                                     >
                                         Assign
                                     </button>
@@ -250,6 +360,15 @@ const UserPanel: React.FC = () => {
                             <h2 className="text-2xl font-bold mb-4 text-white">Change Name</h2>
                             {error && <p className="text-red-500 mb-4">{error}</p>}
                             {success && <p className="text-green-600 mb-4">{success}</p>}
+                            {isLoading && (
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    <span className="text-gray-400">Updating...</span>
+                                </div>
+                            )}
                             <form onSubmit={handleChangeName}>
                                 <div className="mb-4">
                                     <label htmlFor="name" className="block text-sm font-medium text-gray-300">
@@ -269,12 +388,14 @@ const UserPanel: React.FC = () => {
                                         type="button"
                                         onClick={() => setIsChangeNameModalOpen(false)}
                                         className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
+                                        disabled={isLoading}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                        disabled={isLoading}
                                     >
                                         Save
                                     </button>
@@ -291,6 +412,15 @@ const UserPanel: React.FC = () => {
                             <h2 className="text-2xl font-bold mb-4 text-white">Change Password</h2>
                             {error && <p className="text-red-500 mb-4">{error}</p>}
                             {success && <p className="text-green-600 mb-4">{success}</p>}
+                            {isLoading && (
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    <span className="text-gray-400">Updating...</span>
+                                </div>
+                            )}
                             <form onSubmit={handleChangePassword}>
                                 <div className="mb-4">
                                     <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-300">
@@ -338,12 +468,14 @@ const UserPanel: React.FC = () => {
                                         type="button"
                                         onClick={() => setIsChangePasswordModalOpen(false)}
                                         className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
+                                        disabled={isLoading}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                        disabled={isLoading}
                                     >
                                         Save
                                     </button>

@@ -13,6 +13,7 @@ export interface AuthContextType {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    updateUser: (updatedUser: User) => void; // ДОБАВЛЕНО
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -21,6 +22,7 @@ export const AuthContext = createContext<AuthContextType>({
     isLoading: false,
     login: async () => {},
     logout: async () => {},
+    updateUser: () => {}, // ДОБАВЛЕНО
 });
 
 interface AuthProviderProps {
@@ -87,6 +89,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
+    const updateUser = (updatedUser: User) => { // ДОБАВЛЕНО
+        setUser(updatedUser);
+    };
+
     const checkAuth = async () => {
         const storedToken = localStorage.getItem('token');
         if (!storedToken) {
@@ -133,7 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );
