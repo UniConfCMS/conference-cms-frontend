@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-3">
                 <img src={logo} alt="Logo" className="h-10 w-10" />
                 <span className="text-xl font-semibold select-none text-white">
-                    NPER GROUP SPACE
+                    ANIMAL SCIENCE CONSORTIUM
                 </span>
             </div>
 
@@ -37,7 +37,7 @@ export const Header: React.FC = () => {
                     onClick={() => setIsLoginOpen(true)}
                     className="text-blue-500 hover:text-blue-400 transition font-semibold"
                 >
-                    Войти
+                    Login
                 </button>
             )}
 
