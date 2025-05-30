@@ -8,8 +8,8 @@ interface User {
     role: string;
 }
 
-// Тип для контекста
-interface AuthContextType {
+// Тип для контекста (экспортируем его)
+export interface AuthContextType {
     user: User | null;
     token: string | null;
     login: (email: string, password: string) => Promise<void>;
@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setToken(null);
             localStorage.removeItem('token');
         } catch (err) {
-            console.error('Login error:', err);
+            console.error('Logout error:', err);
         }
     };
 
