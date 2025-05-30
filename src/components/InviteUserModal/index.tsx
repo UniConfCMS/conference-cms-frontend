@@ -73,7 +73,6 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
     const availableRoles =
         user?.role === 'super_admin'
             ? [
-                { value: 'editor', label: 'Editor' }, // ДОБАВЛЕНО: editor для super_admin
                 { value: 'admin', label: 'Administrator' },
                 { value: 'super_admin', label: 'Super Administrator' },
             ]
