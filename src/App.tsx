@@ -18,9 +18,9 @@ function App() {
                 <Routes>
                     <Route path="/" element={<MainView />} />
                     <Route path="/faq/" element={<FAQView />} />
-                    <Route path="/newspaper/" element={<ConferenceView />} />
-                    <Route path="/newspaper/:id" element={<DetailConferenceView />} />
-                    <Route path="/newspaper/create" element={<CreateNewspaperView />} />
+                    <Route path='/conferences/' element={<ConferenceView />} />
+                    <Route path="/conferences/:id" element={<DetailConferenceView />} />
+                    <Route path="/conferences/:id/create-page" element={<CreatePageView />} />
                     <Route path="/panel" element={<UserPanel />} />
                     <Route path="/set-password" element={<SetPasswordView />} />
                     <Route
@@ -46,6 +46,5 @@ function App() {
             </BrowserRouter>
         </AuthProvider>
     );
-}
 
 export default App;

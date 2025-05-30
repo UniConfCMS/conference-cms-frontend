@@ -1,0 +1,22 @@
+.wysiwyg :global(.ql-toolbar) {
+    background-color: #141414;
+    border-radius: 8px 8px 0px 0px;
+    border: 1px solid #303030;
+    border-bottom: none;
+    fill: rgba(255,255,255 100%) !important;
+}
+.wysiwyg :global(.ql-toolbar svg) {
+    fill: rgba(255,255,255 100%) !important;
+}
+.wysiwyg :global(.ql-container) {
+border: 1px solid #303030;
+border-top: 2px solid black !important;
+background-color: #141414;
+border-radius: 0px 0px 8px 8px;
+}
+.wysiwyg :global(.ql-editor.ql-blank::before) {
+color: rgba(255, 255, 255, 30%);
+}
+.wysiwyg :global(.ql-editor) {
+min-height: 200px;
+}
