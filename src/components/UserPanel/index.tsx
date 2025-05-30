@@ -1,7 +1,14 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import InviteUserModal from '../InviteUserModal/index';
 import { useNavigate } from 'react-router-dom';
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+}
 
 const UserPanel: React.FC = () => {
     const { user, logout, token, updateUser } = useContext(AuthContext);
@@ -21,10 +28,102 @@ const UserPanel: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [users, setUsers] = useState<User[]>([]);
+    const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
     if (!user) return null;
 
-    console.log('User:', { id: user.id, role: user.role, email: user.email });
+    // Загрузка пользователей для автодополнения
+    useEffect(() => {
+        if (user.role === 'super_admin' && isAssignRoleModalOpen) {
+            const fetchUsers = async () => {
+                try {
+                    const response = await fetch('http://localhost:8000/api/super-admin/users', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                        },
+                        credentials: 'include',
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch users');
+                    }
+
+                    const data = await response.json();
+                    setUsers(data);
+                    setFilteredUsers(data);
+                } catch (err) {
+                    setError(err instanceof Error ? err.message : 'An error occurred');
+                }
+            };
+
+            fetchUsers();
+        }
+    }, [isAssignRoleModalOpen, token, user.role]);
+
+    // Фильтрация пользователей
+    const handleEmailInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSelectedEmail(value);
+        if (value) {
+            const filtered = users.filter((u) =>
+                u.email.toLowerCase().includes(value.toLowerCase())
+            );
+            setFilteredUsers(filtered);
+        } else {
+            setFilteredUsers(users);
+        }
+    };
+
+    // Выбор пользователя
+    const handleSelectUser = (selectedUser: User) => {
+        setSelectedEmail(selectedUser.email);
+        setSelectedUserId(selectedUser.id);
+        setFilteredUsers([]);
+    };
+
+    // Сброс состояний для Invite User
+    const closeInviteModal = () => {
+        setIsInviteModalOpen(false);
+    };
+
+    // Сброс состояний для Delete Account
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setError(null);
+        setSuccess(null);
+    };
+
+    // Сброс состояний для Assign Role
+    const closeAssignRoleModal = () => {
+        setIsAssignRoleModalOpen(false);
+        setError(null);
+        setSuccess(null);
+        setSelectedEmail('');
+        setSelectedUserId(null);
+        setSelectedRole('admin');
+        setFilteredUsers(users);
+    };
+
+    // Сброс состояний для Change Name
+    const closeChangeNameModal = () => {
+        setIsChangeNameModalOpen(false);
+        setError(null);
+        setSuccess(null);
+        setName('');
+    };
+
+    // Сброс состояний для Change Password
+    const closeChangePasswordModal = () => {
+        setIsChangePasswordModalOpen(false);
+        setError(null);
+        setSuccess(null);
+        setCurrentPassword('');
+        setNewPassword('');
+        setPasswordConfirmation('');
+    };
 
     const handleDeleteAccount = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,8 +165,14 @@ const UserPanel: React.FC = () => {
         setSuccess(null);
         setIsLoading(true);
 
+        if (!selectedUserId) {
+            setError('Please select a user');
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            const response = await fetch('http://localhost:8000/api/super-admin/users/assign-role', {
+            const response = await fetch(`http://localhost:8000/api/super-admin/users/${selectedUserId}/assign-role`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -75,7 +180,7 @@ const UserPanel: React.FC = () => {
                     'Authorization': `Bearer ${token}`,
                 },
                 credentials: 'include',
-                body: JSON.stringify({ email: selectedEmail, role: selectedRole }),
+                body: JSON.stringify({ role: selectedRole }),
             });
 
             if (!response.ok) {
@@ -84,9 +189,7 @@ const UserPanel: React.FC = () => {
             }
 
             setSuccess('Role assigned successfully!');
-            setSelectedEmail('');
-            setSelectedRole('admin');
-            setTimeout(() => setIsAssignRoleModalOpen(false), 2000);
+            setTimeout(() => closeAssignRoleModal(), 2000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
@@ -126,8 +229,7 @@ const UserPanel: React.FC = () => {
             const data = await response.json();
             updateUser({ ...user, name });
             setSuccess('Name updated successfully!');
-            setName('');
-            setTimeout(() => setIsChangeNameModalOpen(false), 2000);
+            setTimeout(() => closeChangeNameModal(), 2000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
@@ -169,10 +271,7 @@ const UserPanel: React.FC = () => {
             }
 
             setSuccess('Password changed successfully!');
-            setCurrentPassword('');
-            setNewPassword('');
-            setPasswordConfirmation('');
-            setTimeout(() => setIsChangePasswordModalOpen(false), 2000);
+            setTimeout(() => closeChangePasswordModal(), 2000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
@@ -181,14 +280,37 @@ const UserPanel: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#1a1a26] p-6">
+        <div className="min-h-screen bg-[#1a1a26] pt-12 px-6">
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold text-white mb-6">User Panel</h1>
+                <div className="flex items-center space-x-2 mb-6">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="text-gray-300 hover:text-blue-500 transition"
+                        aria-label="Go back"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 19l-7-7 7-7"
+                            />
+                        </svg>
+                    </button>
+                    <h1 className="text-3xl font-bold text-white">User Panel</h1>
+                </div>
                 <div className="bg-[#2a2a40] p-6 rounded-lg shadow-md">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold text-gray-300">
                             Welcome, {user.name} ({user.role})
                         </h2>
+                        <h3>{user.email}</h3>
                         <button
                             onClick={logout}
                             className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition"
@@ -196,12 +318,12 @@ const UserPanel: React.FC = () => {
                             Logout
                         </button>
                     </div>
-                    <div className="space-y-4">
-                        <div className="flex space-x-4">
+                    <div className="space-y-5">
+                        <div className="flex space-x-5">
                             {(user.role === 'admin' || user.role === 'super_admin') && (
                                 <button
                                     onClick={() => setIsInviteModalOpen(true)}
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
                                 >
                                     Invite New User
                                 </button>
@@ -209,22 +331,22 @@ const UserPanel: React.FC = () => {
                             {user.role === 'super_admin' && (
                                 <button
                                     onClick={() => setIsAssignRoleModalOpen(true)}
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
                                 >
                                     Assign Role
                                 </button>
                             )}
                         </div>
-                        <div className="flex space-x-4">
+                        <div className="flex space-x-5">
                             <button
                                 onClick={() => setIsChangeNameModalOpen(true)}
-                                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
                             >
                                 Change Name
                             </button>
                             <button
                                 onClick={() => setIsChangePasswordModalOpen(true)}
-                                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
                             >
                                 Change Password
                             </button>
@@ -241,7 +363,7 @@ const UserPanel: React.FC = () => {
                 {/* Invite User Modal */}
                 <InviteUserModal
                     isOpen={isInviteModalOpen}
-                    onClose={() => setIsInviteModalOpen(false)}
+                    onClose={closeInviteModal}
                 />
 
                 {/* Delete Account Modal */}
@@ -267,8 +389,8 @@ const UserPanel: React.FC = () => {
                                 <div className="flex justify-end space-x-2">
                                     <button
                                         type="button"
-                                        onClick={() => setIsDeleteModalOpen(false)}
-                                        className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
+                                        onClick={closeDeleteModal}
+                                        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
                                         disabled={isLoading}
                                     >
                                         Cancel
@@ -303,18 +425,32 @@ const UserPanel: React.FC = () => {
                                 </div>
                             )}
                             <form onSubmit={handleAssignRole}>
-                                <div className="mb-4">
+                                <div className="mb-4 relative">
                                     <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                                         User Email
                                     </label>
                                     <input
-                                        type="email"
+                                        type="text"
                                         id="email"
                                         value={selectedEmail}
-                                        onChange={(e) => setSelectedEmail(e.target.value)}
+                                        onChange={handleEmailInput}
                                         className="mt-1 block w-full px-3 py-2 bg-[#2a2a40] border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-600"
+                                        placeholder="Start typing email..."
                                         required
                                     />
+                                    {filteredUsers.length > 0 && (
+                                        <ul className="absolute z-10 w-full bg-[#2a2a40] border border-gray-600 rounded-md mt-1 max-h-40 overflow-y-auto">
+                                            {filteredUsers.map((u) => (
+                                                <li
+                                                    key={u.id}
+                                                    onClick={() => handleSelectUser(u)}
+                                                    className="px-3 py-2 text-white hover:bg-blue-600 cursor-pointer"
+                                                >
+                                                    {u.email} ({u.name})
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </div>
                                 <div className="mb-4">
                                     <label htmlFor="role" className="block text-sm font-medium text-gray-300">
@@ -327,6 +463,7 @@ const UserPanel: React.FC = () => {
                                         className="mt-1 block w-full px-3 py-2 bg-[#2a2a40] border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-600"
                                         required
                                     >
+                                        <option value="editor">Editor</option>
                                         <option value="admin">Administrator</option>
                                         <option value="super_admin">Super Administrator</option>
                                     </select>
@@ -334,15 +471,15 @@ const UserPanel: React.FC = () => {
                                 <div className="flex justify-end space-x-2">
                                     <button
                                         type="button"
-                                        onClick={() => setIsAssignRoleModalOpen(false)}
-                                        className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
+                                        onClick={closeAssignRoleModal}
+                                        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
                                         disabled={isLoading}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
                                         disabled={isLoading}
                                     >
                                         Assign
@@ -386,15 +523,15 @@ const UserPanel: React.FC = () => {
                                 <div className="flex justify-end space-x-2">
                                     <button
                                         type="button"
-                                        onClick={() => setIsChangeNameModalOpen(false)}
-                                        className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
+                                        onClick={closeChangeNameModal}
+                                        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
                                         disabled={isLoading}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
                                         disabled={isLoading}
                                     >
                                         Save
@@ -466,15 +603,15 @@ const UserPanel: React.FC = () => {
                                 <div className="flex justify-end space-x-2">
                                     <button
                                         type="button"
-                                        onClick={() => setIsChangePasswordModalOpen(false)}
-                                        className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
+                                        onClick={closeChangePasswordModal}
+                                        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
                                         disabled={isLoading}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
                                         disabled={isLoading}
                                     >
                                         Save

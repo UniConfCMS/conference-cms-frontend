@@ -20,6 +20,15 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
         setRole(user?.role === 'super_admin' ? 'admin' : 'editor');
     }, [user]);
 
+    const handleClose = () => {
+        setEmail('');
+        setName('');
+        setRole(user?.role === 'super_admin' ? 'admin' : 'editor');
+        setError(null);
+        setSuccess(null);
+        onClose();
+    };
+
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -53,10 +62,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
             }
 
             setSuccess('Invitation Sent!');
-            setEmail('');
-            setName('');
-            setRole(user?.role === 'super_admin' ? 'admin' : 'editor');
-            setTimeout(onClose, 2000);
+            setTimeout(() => handleClose(), 2000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
@@ -67,10 +73,11 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
     const availableRoles =
         user?.role === 'super_admin'
             ? [
+                { value: 'editor', label: 'Editor' }, // ДОБАВЛЕНО: editor для super_admin
                 { value: 'admin', label: 'Administrator' },
                 { value: 'super_admin', label: 'Super Administrator' },
             ]
-            : [{ value: 'editor', label: 'Redactor' }];
+            : [{ value: 'editor', label: 'Editor' }];
 
     console.log('Available roles:', availableRoles);
     console.log('Current role:', role);
@@ -140,16 +147,26 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
                             ))}
                         </select>
                     </div>
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
-                        disabled={isLoading}
-                    >
-                        Send invitation
-                    </button>
+                    <div className="flex justify-end space-x-2">
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
+                            disabled={isLoading}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
+                            disabled={isLoading}
+                        >
+                            Send invitation
+                        </button>
+                    </div>
                 </form>
                 <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="absolute top-2 right-2 text-gray-400 text-2xl hover:text-gray-200"
                 >
                     ×
