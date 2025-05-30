@@ -6,6 +6,7 @@ import { FAQView } from './containers/FaqView';
 import { AuthProvider } from './context/AuthContext';
 import { ConferenceView } from './containers/ConferenceView';
 import { DetailConferenceView } from './containers/ConferenceView/DetailConferenceView';
+import { CreatePageView } from './containers/PageView/CreatePageView';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
                   <Route path="/faq/" element={<FAQView />} />
                   <Route path='/conferences/' element={<ConferenceView />} />
                   <Route path="/conferences/:id" element={<DetailConferenceView />} />
+                  <Route path="/conferences/:id/create-page" element={<CreatePageView />} />
               </Routes>
           </BrowserRouter>
       </AuthProvider>

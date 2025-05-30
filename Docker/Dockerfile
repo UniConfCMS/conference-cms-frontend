@@ -8,6 +8,7 @@ RUN npm install
 
 RUN npm install react-router-dom @types/react-router-dom
 
+RUN npm install react-quill quill
 
 COPY . .
 

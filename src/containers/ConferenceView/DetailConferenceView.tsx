@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DefaultLayout } from "../../components/DefaultLayout";
 import { Conference} from "../../interfaces/Conference";
 import { Page } from "../../interfaces/Page";
+import { AuthContext } from "../../context/AuthContext";
 
 export const DetailConferenceView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, token } = useContext(AuthContext);
   
   const [conference, setConference] = useState<Conference | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
@@ -122,12 +124,22 @@ export const DetailConferenceView: React.FC = () => {
             <h1 className="text-3xl font-bold text-white">
               {conference?.title || 'Conference'}
             </h1>
-            <button
-              onClick={() => navigate("/newspaper")}
-              className="px-4 py-2 border rounded-lg text-white hover:bg-gray-700"
-            >
-              Back
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate("/conferences")}
+                className="px-4 py-2 border rounded-lg text-white hover:bg-gray-700"
+              >
+                Back
+              </button>
+              {user && token && (
+                <button 
+                  onClick={() => navigate(`/conferences/${id}/create-page`)} 
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+                >
+                  Create page  
+                </button>
+              )}
+            </div>
           </div>
           <div className="text-center py-10">
             <p className="text-gray-400">No pages found for this conference</p>
@@ -144,12 +156,22 @@ export const DetailConferenceView: React.FC = () => {
           <h1 className="text-3xl font-bold text-white">
             {conference?.title || 'Conference Pages'}
           </h1>
-          <button
-            onClick={() => navigate("/newspaper")}
-            className="px-4 py-2 border rounded-lg text-white hover:bg-gray-700"
-          >
-            Back
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate("/conferences")}
+              className="px-4 py-2 border rounded-lg text-white hover:bg-gray-700"
+            >
+              Back
+            </button>
+            {user && token && (
+              <button 
+                onClick={() => navigate(`/conferences/${id}/create-page`)} 
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+              >
+                Create page  
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
