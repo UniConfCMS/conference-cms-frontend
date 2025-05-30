@@ -79,7 +79,7 @@ export const MainView = () => {
             </div>
             <h1 className="text-4xl mb-4">
               Welcome to -{" "}
-              <span className="text-blue-600 font-semibold">Conference Group</span> space
+              <span className="text-blue-600 font-semibold">UniConf Conference</span> space
             </h1>
             <p className="text-lg text-gray-400 max-w-3xl">
               Discover and connect with the latest academic conferences and research events.

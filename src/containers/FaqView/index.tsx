@@ -3,24 +3,89 @@ import { DefaultLayout } from "../../components/DefaultLayout";
 
 const faqItems = [
   {
-    question: "What is Newspaper Group Space?",
+    question: "What is the University Consortium Conference CMS?",
     answer:
-      "Newspaper Group Space is a platform where you can find the freshest news and newspapers from schools in your city.",
+      "The University Consortium Conference CMS is a platform designed to streamline the creation and management of websites for the annual Animal Science Days conference hosted by a consortium of universities.",
   },
   {
-    question: "How often is the news updated?",
+    question: "Who can use the CMS?",
     answer:
-      "We update our news daily to keep you informed about all the latest school events and announcements.",
+      "The CMS supports three roles: Anonymous users (public access), Editors (content management), and Administrators (full system control).",
   },
   {
-    question: "Can I submit news from my school?",
+    question: "How do I access the CMS?",
     answer:
-      "Yes! Schools can contact us to submit their news and have it published on our platform.",
+      "Anonymous users can visit the public website. Editors and Administrators log in via a secure form with provided credentials.",
   },
   {
-    question: "Is there a mobile app?",
+    question: "What can Editors do in the CMS?",
     answer:
-      "Currently, we do not have a mobile app, but our website is fully responsive and works great on any device.",
+      "Editors can add, remove, or edit subpages for their assigned conference edition and upload files (.doc, .docx, .pdf).",
+  },
+  {
+    question: "What can Administrators do in the CMS?",
+    answer:
+      "Administrators can create conference editions, manage users, assign editors, and add, edit, or remove subpages.",
+  },
+  {
+    question: "What types of files can be uploaded to the CMS?",
+    answer:
+      "The CMS supports .doc, .docx, and .pdf file uploads, which can be linked to subpages.",
+  },
+  {
+    question: "Does the CMS support multiple languages?",
+    answer:
+      "Yes, the CMS supports multilingual content for creating and managing subpages in different languages.",
+  },
+  {
+    question: "What is the WYSIWYG editor, and what can it do?",
+    answer:
+      "The WYSIWYG editor allows text formatting, image uploads, and insertion of links and tables without coding knowledge.",
+  },
+  {
+    question: "Is the CMS mobile-friendly?",
+    answer:
+      "Yes, the CMS is fully responsive, ensuring usability on desktops, tablets, and mobile devices.",
+  },
+  {
+    question: "Why was this CMS created?",
+    answer:
+      "The CMS eliminates the need to create new websites annually for the same conference, providing a unified platform for all consortium universities.",
+  },
+  {
+    question: "Can I customize the look of the conference website?",
+    answer:
+      "Yes, the CMS uses customizable, publicly available templates (e.g., MIT-licensed) to match the conference’s branding.",
+  },
+  {
+    question: "How is the CMS hosted?",
+    answer:
+      "The CMS has a separated frontend and backend. If not built in PHP, a compatible hosting provider (e.g., Namecheap for Python) is provided.",
+  },
+  {
+    question: "How secure is the CMS?",
+    answer:
+      "The CMS uses secure logins and role-based access control to protect user data and system functions.",
+  },
+  {
+    question: "Can I access previous conference editions?",
+    answer:
+      "Yes, past editions are archived for public viewing and administrative management.",
+  },
+  {
+    question: "How do I get started as an Editor or Administrator?",
+    answer:
+      "Contact the consortium’s administrator for credentials and assignment to a conference edition or system role.",
+  },
+  {
+    question: "Is there a mobile app for the CMS?",
+    answer:
+      "No mobile app is available, but the CMS is accessible via web browsers on all devices.",
+  },
+  {
+    question: "Who do I contact for technical support?",
+    answer:
+      "Contact the consortium’s IT administrator or the hosting provider’s support team for assistance.",
   },
 ];
 

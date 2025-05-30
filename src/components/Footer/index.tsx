@@ -11,7 +11,7 @@ export const Footer = () => {
         <div className="flex space-x-6 text-sm font-medium">
           <a href="/" className="hover:text-gray-300 transition">Home</a>
           <a href="/faq" className="hover:text-gray-300 transition">FAQ</a>
-          <a href="/newspaper" className="hover:text-gray-300 transition">Newspaper</a>
+          <a href="/conferences" className="hover:text-gray-300 transition">Conferences</a>
         </div>
       </div>
     </footer>

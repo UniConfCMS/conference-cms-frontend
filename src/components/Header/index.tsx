@@ -18,9 +18,9 @@ export const Header: React.FC = () => {
             </div>
 
             <nav className="space-x-6 text-lg">
-                <Link to="/" className="text-gray-300 hover:text-white">Home</Link>
-                <Link to="/faq/" className="text-gray-300 hover:text-white">FAQ</Link>
-                <Link to="/newspaper/" className="text-gray-300 hover:text-white">Newspaper</Link>
+              <Link to="/" className="hover:gray-300">Home</Link>
+              <Link to="/faq/" className="hover:gray-300">FAQ</Link>
+              <Link to="/conferences/" className="hover:gray-300">Conferences</Link>
             </nav>
 
             {isLoading ? (

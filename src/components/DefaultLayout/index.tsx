@@ -12,9 +12,9 @@ interface DefaultLayoutProps {
 export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children }) => {
   return (
     <div className={style.headerBlockContainer}>
-      <Header />
+      <Header/>
       <div className={style.mainBlock}>{children}</div>
-      <Footer />
+      <Footer/>
     </div>
   );
 };
