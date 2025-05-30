@@ -1,50 +1,58 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../../context/AuthContext';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-interface LoginModalProps {
+interface ForgotPasswordModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-    const { login } = useContext(AuthContext);
+const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
     const [email, setEmail] = useState<string>('');
-    const [password, setPassword] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        setSuccess(null);
         setIsLoading(true);
 
         try {
-            await login(email, password);
-            setEmail('');
-            setPassword('');
-            onClose();
-        } catch (err) {
-            if (err instanceof Error) {
-                if (err.message.includes('Unexpected token')) {
-                    setError('Incorrect login data');
-                } else {
-                    setError('Incorrect login data');
-                }
-            } else {
-                setError('An unexpected error occurred. Please try again.');
+            const response = await fetch('http://localhost:8000/api/password/reset/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                console.error('Forgot password error:', data);
+                throw new Error(data.message || 'Failed to send link');
             }
+
+            setSuccess('Reset password link sent');
+            setEmail('');
+            setTimeout(() => {
+                onClose();
+                navigate('/login');
+            }, 2000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleForgotPassword = () => {
+    const handleClose = () => {
         setEmail('');
-        setPassword('');
         setError(null);
-        navigate('/forgot-password');
+        setSuccess(null);
         onClose();
     };
 
@@ -53,15 +61,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-[#1a1a26] p-6 rounded-lg shadow-md w-96 relative">
-                <h2 className="text-2xl font-bold mb-4 text-white">Login into CMS</h2>
+                <h2 className="text-2xl font-bold mb-4 text-white">Forgot Password</h2>
                 {error && <p className="text-red-500 mb-4">{error}</p>}
+                {success && <p className="text-green-600 mb-4">{success}</p>}
                 {isLoading && (
                     <div className="flex items-center space-x-2 mb-4">
                         <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        <span className="text-gray-400">Logging in...</span>
+                        <span className="text-gray-400">Sending...</span>
                     </div>
                 )}
                 <form onSubmit={handleSubmit}>
@@ -76,42 +85,29 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                             onChange={(e) => setEmail(e.target.value)}
                             className="mt-1 block w-full px-3 py-2 bg-[#2a2a40] border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-600"
                             required
-                            disabled={isLoading}
                         />
                     </div>
-                    <div className="mb-4">
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                            Password
-                        </label>
-                        <input
-                            type="password"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="mt-1 block w-full px-3 py-2 bg-[#2a2a40] border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-600"
-                            required
+                    <div className="flex justify-end space-x-2">
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
                             disabled={isLoading}
-                        />
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                            disabled={isLoading}
+                        >
+                            Send Reset Link
+                        </button>
                     </div>
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? 'Logging in...' : 'Login'}
-                    </button>
                 </form>
                 <button
-                    onClick={handleForgotPassword}
-                    className="mt-4 text-gray-300 hover:text-blue-400 text-sm transition"
-                    disabled={isLoading}
-                >
-                    Forgot Password?
-                </button>
-                <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="absolute top-2 right-2 text-gray-400 text-2xl hover:text-gray-200"
-                    disabled={isLoading}
                 >
                     ×
                 </button>
@@ -120,4 +116,4 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     );
 };
 
-export default LoginModal;
+export default ForgotPasswordModal;
