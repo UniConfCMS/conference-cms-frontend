@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ConferenceView } from './containers/ConferenceView';
 import { DetailConferenceView } from './containers/ConferenceView/DetailConferenceView';
 import { CreateNewspaperView } from './containers/ConferenceView/CreateNewspaperView';
+import SetPasswordView from './components/SetPasswordView/index';
 import UserPanel from "./components/UserPanel";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
                   <Route path="/newspaper/:id" element={<DetailConferenceView />} />
                   <Route path="/newspaper/create" element={<CreateNewspaperView />} />
                   <Route path="/panel" element={<UserPanel />}/>
+                  <Route path="/set-password" element={<SetPasswordView />} />
               </Routes>
           </BrowserRouter>
       </AuthProvider>
