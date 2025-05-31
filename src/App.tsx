@@ -5,11 +5,14 @@ import { FAQView } from './containers/FaqView';
 import { AuthProvider } from './context/AuthContext';
 import { ConferenceView } from './containers/ConferenceView';
 import { DetailConferenceView } from './containers/ConferenceView/DetailConferenceView';
-import { CreateNewspaperView } from './containers/ConferenceView/CreateNewspaperView';
 import SetPasswordView from './components/SetPasswordView/index';
 import UserPanel from './components/UserPanel';
 import ForgotPasswordModal from './components/ForgotPassword';
 import ResetPasswordModal from './components/ResetPassword';
+import { CreatePageView } from './containers/PageView/CreatePageView';
+import { CreateConferenceView } from './containers/ConferenceView/CreateConferenceView';
+import { EditConferenceView } from './containers/ConferenceView/UpdateConferenceView';
+
 
 function App() {
     return (
@@ -21,8 +24,15 @@ function App() {
                     <Route path='/conferences/' element={<ConferenceView />} />
                     <Route path="/conferences/:id" element={<DetailConferenceView />} />
                     <Route path="/conferences/:id/create-page" element={<CreatePageView />} />
+                    <Route path="/conferences-create" element={<CreateConferenceView />} />
+                    <Route path="/conferences/:id/edit" element={<EditConferenceView />} />
+
+                    
+               
+                    
                     <Route path="/panel" element={<UserPanel />} />
                     <Route path="/set-password" element={<SetPasswordView />} />
+                
                     <Route
                         path="/forgot-password"
                         element={
@@ -46,5 +56,5 @@ function App() {
             </BrowserRouter>
         </AuthProvider>
     );
-
+}
 export default App;
