@@ -21,7 +21,7 @@ export const CreatePageView: React.FC = () => {
           </button>
         </div>
         <div className="bg-[#1a1a26] rounded-lg p-6">
-          <Wysiwyg />
+          <Wysiwyg/>
         </div>
       </main>
     </DefaultLayout>

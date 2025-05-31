@@ -16,7 +16,6 @@ export const DetailConferenceView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to fetch conference pages
   const fetchConferencePages = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -35,7 +34,6 @@ export const DetailConferenceView: React.FC = () => {
       const data: Page[] = await response.json();
       setPages(data);
       
-      // Set first page as selected by default
       if (data.length > 0) {
         setSelectedPage(data[0]);
       }
@@ -49,7 +47,6 @@ export const DetailConferenceView: React.FC = () => {
     }
   };
 
-  // Function to fetch conference details
   const fetchConferenceDetails = async (): Promise<void> => {
     try {
       const response = await fetch(`http://localhost:8000/api/conferences`, {
@@ -70,7 +67,6 @@ export const DetailConferenceView: React.FC = () => {
     }
   };
 
-  // Load data on component mount
   useEffect(() => {
     if (id) {
       fetchConferencePages();
@@ -78,12 +74,12 @@ export const DetailConferenceView: React.FC = () => {
     }
   }, [id]);
 
-  // Handle page selection
+  
   const handlePageSelect = (page: Page): void => {
     setSelectedPage(page);
   };
 
-  // Show loading state
+  
   if (loading) {
     return (
       <DefaultLayout>
