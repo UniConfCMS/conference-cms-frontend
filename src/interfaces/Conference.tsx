@@ -1,5 +1,5 @@
 import { Page } from "./Page";
-import { User } from "./User";
+import { User } from "../context/AuthContext";
 
 export interface Conference {
     id: number;
@@ -7,8 +7,7 @@ export interface Conference {
     year: number;
     created_by: number;
     created_at: string;
-    updated_at: string;
-    // Optional relations
+    updated_at: string; // Optional relations
     creator?: User;
     pages?: Page[];
   }
