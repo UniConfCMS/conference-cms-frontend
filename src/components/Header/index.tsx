@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext, AuthContextType } from '../../context/AuthContext';
 import LoginModal from '../LoginModal';
-import logo from '../../assets/logo.svg';
+import logo from '../../assets/asd.svg';
 import { Link } from 'react-router-dom';
 
 export const Header: React.FC = () => {
@@ -28,11 +28,6 @@ export const Header: React.FC = () => {
             ) : user ? (
                 <Link to="/panel" className="flex items-center space-x-3">
                     <span className="font-semibold select-none text-white">{user.name}</span>
-                    <img
-                        src="https://i.pravatar.cc/40"
-                        alt="User Avatar"
-                        className="h-10 w-10 rounded-full object-cover"
-                    />
                 </Link>
             ) : (
                 <button
