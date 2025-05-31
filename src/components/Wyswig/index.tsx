@@ -7,30 +7,19 @@ import style from "./Wyswig.module.css";
 export const Wysiwyg: React.FC = () => {
   const [formData, setFormData] = useState({
     title: "",
-    slug: "",
     content: ""
   });
   const [saving, setSaving] = useState(false);
   const quillRef = useRef<ReactQuill | null>(null);
-  const { id } = useParams<{ id: string }>(); // Змінено з conferenceId на id
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Auto-generate slug from title
-  const generateSlug = (title: string): string => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-  };
+ 
 
-  // Handle title change and auto-generate slug
   const handleTitleChange = (title: string) => {
     setFormData(prev => ({
       ...prev,
       title,
-      slug: generateSlug(title)
     }));
   };
 
@@ -64,7 +53,7 @@ export const Wysiwyg: React.FC = () => {
         }
       } catch (err) {
         console.error("Image upload failed", err);
-        alert("Помилка завантаження зображення");
+        alert("Image loading error");
       }
     };
   }, []);
@@ -92,12 +81,12 @@ export const Wysiwyg: React.FC = () => {
     
     if (!id) {
       console.error("Conference ID is not available");
-      alert("Конференція не вибрана");
+      alert("Conference not selected");
       return;
     }
 
     if (!formData.title.trim() || !formData.content.trim()) {
-      alert("Будь ласка, заповніть всі обов'язкові поля");
+      alert("Please fill in all required fields");
       return;
     }
 
@@ -119,17 +108,17 @@ export const Wysiwyg: React.FC = () => {
       if (response.ok) {
         const newPage = await response.json();
         alert("Сторінка успішно створена!");
-        setFormData({ title: "", slug: "", content: "" });
+        setFormData({ title: "", content: "" });
         navigate(`/conferences/${id}`, {
           state: { selectedPage: newPage },
         });
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Не вдалося створити сторінку");
+        throw new Error(errorData.message || "Could not create a page");
       }
     } catch (error) {
-      console.error("Помилка при створенні сторінки:", error);
-      alert("Помилка при створенні сторінки");
+      console.error("Error creating a page:", error);
+      alert("Error creating a page");
     } finally {
       setSaving(false);
     }
@@ -138,9 +127,10 @@ export const Wysiwyg: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Conference ID Display */}
-      <div className="bg-gray-100 p-4 rounded-lg">
+      <div className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50"
+>
         <span className="text-gray-700">
-          Активна конференція ID: <strong>{id || "Немає"}</strong>
+          Active conference ID: <strong>{id || "Немає"}</strong>
         </span>
       </div>
 
@@ -149,14 +139,14 @@ export const Wysiwyg: React.FC = () => {
         {/* Title Input */}
         <div>
           <label htmlFor="page-title" className="block text-sm font-medium text-gray-700 mb-2">
-            Назва сторінки *
+            Title of the page
           </label>
           <input
             type="text"
             id="page-title"
             value={formData.title}
             onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50"            placeholder="Введіть назву сторінки"
+            className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50" placeholder="Enter the name of the page"
             required
             disabled={saving}
           />
@@ -166,7 +156,7 @@ export const Wysiwyg: React.FC = () => {
         {/* Content Editor */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Вміст сторінки *
+            Page content *.
           </label>
           <div className="border border-gray-300 rounded-md">
             <ReactQuill
@@ -176,27 +166,27 @@ export const Wysiwyg: React.FC = () => {
               value={formData.content}
               onChange={(content) => setFormData(prev => ({ ...prev, content }))}
               className={style.wysiwyg}
-              placeholder="Почніть писати вміст сторінки..."
+              placeholder="start writing the content of the page..."
             />
           </div>
         </div>
 
-        {/* Action Buttons */}
+        
         <div className="flex justify-end space-x-3">
           <button
             type="button"
-            onClick={() => setFormData({ title: "", slug: "", content: "" })}
+            onClick={() => setFormData({ title: "", content: "" })}
             className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
             disabled={saving}
           >
-            Очистити форму
+            Clean the mold
           </button>
           <button
             type="submit"
             disabled={saving}
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {saving ? "Збереження..." : "Зберегти сторінку"}
+            {saving ? "Preservation...." : "Save page"}
           </button>
         </div>
       </form>
