@@ -2,6 +2,9 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import style from "./Wyswig.module.css";
+// @ts-ignore
+import ImageResize from 'quill-image-resize-module-react';
+import './WyswigFileIcon.css';
 
 interface WysiwygProps {
   initialTitle?: string;
@@ -75,6 +78,43 @@ export const Wysiwyg: React.FC<WysiwygProps> = ({
     };
   }, []);
 
+  const fileHandler = useCallback(() => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,.csv,.json,.xml,.mp3,.mp4,.avi,.mov,.mkv,.webm,.ogg,.wav,.flac,.svg,.psd,.ai,.eps,.xd,.sketch,.fig,.apk,.exe,.dmg,.iso,.tar,.gz,.tgz,.bz2,.rtf,.odt,.ods,.odp,.odg,.odf,.epub,.mobi,.azw,.fb2,.djvu,.cbz,.cbr");
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const formDataFile = new FormData();
+      formDataFile.append("file", file);
+      try {
+        const res = await fetch("http://localhost:8000/api/admin/conferences/files", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: formDataFile,
+        });
+        const data = await res.json();
+        const editor = quillRef.current?.getEditor();
+        const range = editor?.getSelection(true);
+        if (range) {
+          editor?.insertEmbed(
+            range.index,
+            "link",
+            `http://localhost:8000${data.locations}`
+          );
+          editor?.insertText(range.index, file.name, "link", `http://localhost:8000${data.locations}`);
+        }
+      } catch (err) {
+        console.error("File upload failed", err);
+        alert("File upload error");
+      }
+    };
+  }, []);
+
   const modules = {
     toolbar: {
       container: [
@@ -84,14 +124,21 @@ export const Wysiwyg: React.FC<WysiwygProps> = ({
         [{ list: "ordered" }, { list: "bullet" }],
         [{ color: [] }, { background: [] }],
         [{ align: [] }],
-        ["link", "image"],
+        ["link", "image", "file"],
         ["clean"],
       ],
       handlers: {
         image: imageHandler,
+        file: fileHandler,
       },
     },
+    imageResize: {
+      parchment: ReactQuill.Quill.import('parchment'),
+      modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
+    }
   };
+
+  ReactQuill.Quill.register('modules/imageResize', ImageResize);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -116,7 +163,7 @@ export const Wysiwyg: React.FC<WysiwygProps> = ({
       {conferenceId && (
         <div className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50">
           <span className="text-gray-700">
-            Active conference ID: <strong>{conferenceId || "Немає"}</strong>
+            Active conference ID: <strong>{conferenceId || "No conference selected"}</strong>
           </span>
         </div>
       )}
