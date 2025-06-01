@@ -244,13 +244,13 @@ export const DetailConferenceView: React.FC = () => {
             >
               Back
             </button>
-            {user && token && (
+            {user && token && selectedPage && (
               <>
                 <button
-                  onClick={() => navigate(`/conferences/${id}/create-page`)}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+                  onClick={() => navigate(`/conferences/${id}/edit-page/${selectedPage.id}`)}
+                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white transition-colors"
                 >
-                  Create Page
+                  Edit Page
                 </button>
               </>
             )}
@@ -262,7 +262,7 @@ export const DetailConferenceView: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="bg-[#1a1a26] rounded-lg p-4">
               <h3 className="text-lg font-semibold text-white mb-4">Pages</h3>
-              <nav className="space-y-2">
+              <nav className="space-y-2 flex-1">
                 {pages.map((page: Page) => (
                   <div key={page.id} className="flex items-center justify-between">
                     <button
@@ -286,6 +286,14 @@ export const DetailConferenceView: React.FC = () => {
                   </div>
                 ))}
               </nav>
+              {user && token && (
+                <button
+                  onClick={() => navigate(`/conferences/${id}/create-page`)}
+                  className="mt-4 w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+                >
+                  Add Page
+                </button>
+              )}
             </div>
           </div>
 

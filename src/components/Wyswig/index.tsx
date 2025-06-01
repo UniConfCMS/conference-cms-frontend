@@ -1,23 +1,40 @@
-import React, { useRef, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import style from "./Wyswig.module.css";
 
-export const Wysiwyg: React.FC = () => {
+interface WysiwygProps {
+  initialTitle?: string;
+  initialContent?: string;
+  onSubmit?: (data: { title: string; content: string }) => Promise<void> | void;
+  submitLabel?: string;
+  loading?: boolean;
+  mode?: "create" | "edit";
+  conferenceId?: string;
+}
+
+export const Wysiwyg: React.FC<WysiwygProps> = ({
+  initialTitle = "",
+  initialContent = "",
+  onSubmit,
+  submitLabel = "Save page",
+  loading = false,
+  mode = "create",
+  conferenceId,
+}) => {
   const [formData, setFormData] = useState({
-    title: "",
-    content: ""
+    title: initialTitle,
+    content: initialContent,
   });
   const [saving, setSaving] = useState(false);
   const quillRef = useRef<ReactQuill | null>(null);
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
 
- 
+  useEffect(() => {
+    setFormData({ title: initialTitle, content: initialContent });
+  }, [initialTitle, initialContent]);
 
   const handleTitleChange = (title: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       title,
     }));
@@ -78,47 +95,17 @@ export const Wysiwyg: React.FC = () => {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
-    if (!id) {
-      console.error("Conference ID is not available");
-      alert("Conference not selected");
-      return;
-    }
-
     if (!formData.title.trim() || !formData.content.trim()) {
       alert("Please fill in all required fields");
       return;
     }
-
     setSaving(true);
-
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/conferences/${id}/pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          title: formData.title.trim(),
-          content: formData.content,
-        }),
-      });
-
-      if (response.ok) {
-        const newPage = await response.json();
-        alert("Сторінка успішно створена!");
-        setFormData({ title: "", content: "" });
-        navigate(`/conferences/${id}`, {
-          state: { selectedPage: newPage },
-        });
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Could not create a page");
+      if (onSubmit) {
+        await onSubmit({ title: formData.title.trim(), content: formData.content });
       }
     } catch (error) {
-      console.error("Error creating a page:", error);
-      alert("Error creating a page");
+      alert("Error saving page");
     } finally {
       setSaving(false);
     }
@@ -126,17 +113,14 @@ export const Wysiwyg: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Conference ID Display */}
-      <div className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50"
->
-        <span className="text-gray-700">
-          Active conference ID: <strong>{id || "Немає"}</strong>
-        </span>
-      </div>
-
-      {/* Page Creation Form */}
+      {conferenceId && (
+        <div className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50">
+          <span className="text-gray-700">
+            Active conference ID: <strong>{conferenceId || "Немає"}</strong>
+          </span>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Title Input */}
         <div>
           <label htmlFor="page-title" className="block text-sm font-medium text-gray-700 mb-2">
             Title of the page
@@ -146,14 +130,12 @@ export const Wysiwyg: React.FC = () => {
             id="page-title"
             value={formData.title}
             onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50" placeholder="Enter the name of the page"
+            className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50"
+            placeholder="Enter the name of the page"
             required
-            disabled={saving}
+            disabled={saving || loading}
           />
         </div>
-
-
-        {/* Content Editor */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Page content *.
@@ -164,29 +146,27 @@ export const Wysiwyg: React.FC = () => {
               theme="snow"
               modules={modules}
               value={formData.content}
-              onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+              onChange={(content) => setFormData((prev) => ({ ...prev, content }))}
               className={style.wysiwyg}
               placeholder="start writing the content of the page..."
             />
           </div>
         </div>
-
-        
         <div className="flex justify-end space-x-3">
           <button
             type="button"
             onClick={() => setFormData({ title: "", content: "" })}
             className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-            disabled={saving}
+            disabled={saving || loading}
           >
             Clean the mold
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || loading}
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {saving ? "Preservation...." : "Save page"}
+            {saving || loading ? "Saving..." : submitLabel}
           </button>
         </div>
       </form>
