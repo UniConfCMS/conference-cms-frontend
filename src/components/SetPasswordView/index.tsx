@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { AuthContext, AuthContextType } from '../../context/AuthContext';
 
 const SetPasswordView: React.FC = () => {
@@ -34,27 +35,20 @@ const SetPasswordView: React.FC = () => {
                     expires,
                     signature,
                 }).toString();
-                const response = await fetch(
-                    `http://localhost:8000/api/set-password?${query}`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                        },
-                    }
-                );
 
-                if (!response.ok) {
-                    const data = await response.json();
-                    console.error('GET /set-password error:', data);
-                    throw new Error(data.message || 'Failed to verify link');
-                }
+                const { data } = await axios.get(`http://localhost:8000/api/set-password?${query}`, {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                    withCredentials: true,
+                });
 
-                const data = await response.json();
                 console.log('GET /set-password success:', data);
                 setEmail(data.email); // Используем email из ответа (декодированный)
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'An error occurred');
+            } catch (err: any) {
+                console.error('GET /set-password error:', err.response?.data || err.message);
+                const msg = err.response?.data?.message || 'Failed to verify link';
+                setError(msg);
             } finally {
                 setIsLoading(false);
             }
@@ -74,42 +68,39 @@ const SetPasswordView: React.FC = () => {
         }
 
         try {
-            await fetch('http://localhost:8000/sanctum/csrf-cookie', {
-                method: 'GET',
-                credentials: 'include',
+            // Получаем CSRF cookie
+            await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+                withCredentials: true,
             });
 
             const params = new URLSearchParams(location.search);
-            const response = await fetch('http://localhost:8000/api/set-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    email, // Используем декодированный email из состояния
+            const response = await axios.post(
+                'http://localhost:8000/api/set-password',
+                {
+                    email,
                     password,
                     password_confirmation: passwordConfirmation,
                     expires: params.get('expires'),
                     signature: params.get('signature'),
-                }),
-            });
+                },
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    withCredentials: true,
+                }
+            );
 
-            if (!response.ok) {
-                const data = await response.json();
-                console.error('POST /set-password error:', data);
-                throw new Error(data.message || 'Failed to set password');
-            }
-
-            const data = await response.json();
-            console.log('POST /set-password success:', data);
+            console.log('POST /set-password success:', response.data);
             setSuccess('Password set successfully! Logging in...');
 
             await login(email, password);
             setTimeout(() => navigate('/panel'), 1000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
+        } catch (err: any) {
+            console.error('POST /set-password error:', err.response?.data || err.message);
+            const msg = err.response?.data?.message || 'Failed to set password';
+            setError(msg);
         }
     };
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useContext } from 'react';
 import { AuthContext, AuthContextType } from '../../context/AuthContext';
 import LoginModal from '../LoginModal';
@@ -13,7 +14,7 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-3">
                 <img src={logo} alt="Logo" className="h-10 w-10" />
                 <span className="text-xl font-semibold select-none text-white">
-                    ANIMAL SCIENCE CONSORTIUM
+                    CMS
                 </span>
             </div>
 

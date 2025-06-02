@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DefaultLayout } from '../../components/DefaultLayout';
@@ -338,5 +339,3 @@ export const DetailConferenceView: React.FC = () => {
       </main>
     </DefaultLayout>
   );
-
-};

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 import { DefaultLayout } from "../../components/DefaultLayout";
 import { useNavigate } from "react-router-dom";
 import { Conference } from "../../interfaces/Conference";
-import { DeleteConferenceModal } from "./DelateConferenceModel"; // Ensure correct file name
+import { DeleteConferenceModal } from "./DelateConferenceModel";
 import { AuthContext } from "../../context/AuthContext";
+import axios from 'axios';
 
 export const ConferenceView: React.FC = () => {
   const navigate = useNavigate();
@@ -22,25 +23,19 @@ export const ConferenceView: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8000/api/conferences", {
-        method: "GET",
+      const response = await axios.get("http://localhost:8000/api/conferences", {
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        withCredentials: true,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const data: Conference[] = await response.json();
-      setConferences(data);
-    } catch (err) {
+      setConferences(response.data);
+    } catch (err: any) {
       console.error("Error loading conferences:", err);
-      setError(err instanceof Error ? err.message : "Failed to load conferences");
+      setError(err.response?.data?.error || err.message || "Failed to load conferences");
     } finally {
       setLoading(false);
     }
@@ -69,45 +64,31 @@ export const ConferenceView: React.FC = () => {
     try {
       console.log(`Attempting to delete conference ${conferenceId}`);
 
-      const response = await fetch(`http://localhost:8000/api/admin/conferences/${conferenceId}`, {
-        method: "DELETE",
+      await axios.delete(`http://localhost:8000/api/admin/conferences/${conferenceId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
+        withCredentials: true,
       });
 
-      console.log(`Delete response status: ${response.status}`);
-
-      if (!response.ok) {
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch (parseError) {
-          console.warn("Could not parse error response:", parseError);
-        }
-
-        if (response.status === 403) {
-          errorMessage = "Insufficient permissions to delete conference";
-        } else if (response.status === 404) {
-          errorMessage = "Conference not found";
-        } else if (response.status === 401) {
-          errorMessage = "Authorization required";
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      setConferences((prev) => prev.filter((conf) => conf.id !== conferenceId));
       console.log(`Conference ${conferenceId} deleted successfully`);
-
+      setConferences((prev) => prev.filter((conf) => conf.id !== conferenceId));
       setIsDeleteModalOpen(false);
       setSelectedConference(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting conference:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete conference";
+      let errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || "Failed to delete conference";
+      
+      if (err.response?.status === 403) {
+        errorMessage = "Insufficient permissions to delete conference";
+      } else if (err.response?.status === 404) {
+        errorMessage = "Conference not found";
+      } else if (err.response?.status === 401) {
+        errorMessage = "Authorization required";
+      }
+
       setError(errorMessage);
     } finally {
       setIsDeleting(false);

@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import InviteUserModal from '../InviteUserModal/index';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 interface User {
     id: number;
@@ -39,23 +40,18 @@ const UserPanel: React.FC = () => {
         if (user.role === 'super_admin' && isAssignRoleModalOpen) {
             const fetchUsers = async () => {
                 try {
-                    const response = await fetch('http://localhost:8000/api/super-admin/users', {
+                    const response = await axios.get('http://localhost:8000/api/super-admin/users', {
                         headers: {
                             'Authorization': `Bearer ${token}`,
                             'Accept': 'application/json',
                         },
-                        credentials: 'include',
+                        withCredentials: true,
                     });
 
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch users');
-                    }
-
-                    const data = await response.json();
-                    setUsers(data);
-                    setFilteredUsers(data);
-                } catch (err) {
-                    setError(err instanceof Error ? err.message : 'An error occurred');
+                    setUsers(response.data);
+                    setFilteredUsers(response.data);
+                } catch (err: any) {
+                    setError(err.response?.data?.message || err.message || 'An error occurred');
                 }
             };
 
@@ -132,28 +128,22 @@ const UserPanel: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/user/delete', {
-                method: 'DELETE',
+            await axios.delete('http://localhost:8000/api/user/delete', {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                credentials: 'include',
+                withCredentials: true,
             });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Failed to delete account');
-            }
 
             setSuccess('Account deleted successfully!');
             setTimeout(() => {
                 logout();
                 navigate('/login');
             }, 2000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
+        } catch (err: any) {
+            setError(err.response?.data?.message || err.message || 'An error occurred');
         } finally {
             setIsLoading(false);
         }
@@ -172,26 +162,22 @@ const UserPanel: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/api/super-admin/users/${selectedUserId}/assign-role`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                credentials: 'include',
-                body: JSON.stringify({ role: selectedRole }),
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Failed to assign role');
-            }
+            await axios.patch(`http://localhost:8000/api/super-admin/users/${selectedUserId}/assign-role`, 
+                { role: selectedRole },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    withCredentials: true,
+                }
+            );
 
             setSuccess('Role assigned successfully!');
             setTimeout(() => closeAssignRoleModal(), 2000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
+        } catch (err: any) {
+            setError(err.response?.data?.message || err.message || 'An error occurred');
         } finally {
             setIsLoading(false);
         }
@@ -210,28 +196,23 @@ const UserPanel: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/api/admin/users/${user.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                credentials: 'include',
-                body: JSON.stringify({ name }),
-            });
+            const response = await axios.put(`http://localhost:8000/api/admin/users/${user.id}`, 
+                { name },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    withCredentials: true,
+                }
+            );
 
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Failed to update name');
-            }
-
-            const data = await response.json();
             updateUser({ ...user, name });
             setSuccess('Name updated successfully!');
             setTimeout(() => closeChangeNameModal(), 2000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
+        } catch (err: any) {
+            setError(err.response?.data?.message || err.message || 'An error occurred');
         } finally {
             setIsLoading(false);
         }
@@ -250,30 +231,26 @@ const UserPanel: React.FC = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/api/user/password', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                credentials: 'include',
-                body: JSON.stringify({
+            await axios.patch('http://localhost:8000/api/user/password', 
+                {
                     current_password: currentPassword,
                     password: newPassword,
                     password_confirmation: passwordConfirmation,
-                }),
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Failed to change password');
-            }
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    withCredentials: true,
+                }
+            );
 
             setSuccess('Password changed successfully!');
             setTimeout(() => closeChangePasswordModal(), 2000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
+        } catch (err: any) {
+            setError(err.response?.data?.message || err.message || 'An error occurred');
         } finally {
             setIsLoading(false);
         }
