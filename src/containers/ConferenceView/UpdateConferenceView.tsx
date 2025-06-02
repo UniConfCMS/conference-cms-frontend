@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { Conference } from "../../interfaces/Conference";
 import { DefaultLayout } from "../../components/DefaultLayout";
-
+import axios from 'axios';
 
 export const EditConferenceView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,24 +28,21 @@ export const EditConferenceView: React.FC = () => {
     const fetchConference = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:8000/api/conferences/${id}`, {
+        const response = await axios.get(`http://localhost:8000/api/conferences/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             "Accept": "application/json",
           },
+          withCredentials: true,
         });
 
-        if (!res.ok) {
-          throw new Error(`Failed to load conference: ${res.status}`);
-        }
-
-        const data: Conference = await res.json();
+        const data: Conference = response.data;
         setConference(data);
         setTitle(data.title);
         setYear(data.year.toString());
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load conference");
+      } catch (err: any) {
+        setError(err.response?.data?.message || err.message || "Failed to load conference");
       } finally {
         setLoading(false);
       }
@@ -76,29 +73,23 @@ export const EditConferenceView: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/conferences/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ title, year: parseInt(year) }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `Update failed: ${response.status}`);
-      }
+      const response = await axios.put(`http://localhost:8000/api/admin/conferences/${id}`, 
+        { title, year: parseInt(year) },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
 
       setSuccess("Conference updated successfully");
-     
       setTimeout(() => navigate("/conferences"), 1000);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || "An error occurred";
       setError(errorMessage);
-     
     } finally {
       setIsSubmitting(false);
     }

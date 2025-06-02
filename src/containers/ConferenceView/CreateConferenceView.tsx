@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { DefaultLayout } from "../../components/DefaultLayout";
+import axios from 'axios';
 
 export const CreateConferenceView = () => {
   const { token, user } = useContext(AuthContext);
@@ -31,32 +32,27 @@ export const CreateConferenceView = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/admin/conferences", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ title, year: parsedYear }),
-      });
+      const response = await axios.post("http://localhost:8000/api/admin/conferences", 
+        { title, year: parsedYear },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Error creating conference");
-      }
-
-      setSuccess(`Conference "${data.title}" successfully created`);
+      setSuccess(`Conference "${response.data.title}" successfully created`);
       setTitle("");
       setYear("");
 
-     
       setTimeout(() => {
-        navigate(`/conferences/${data.id}`);
+        navigate(`/conferences/${response.data.id}`);
       }, 1000);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || "An error occurred";
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);

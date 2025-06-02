@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 
 interface InviteUserModalProps {
@@ -16,7 +17,6 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     useEffect(() => {
-        console.log('User role:', user?.role);
         setRole(user?.role === 'super_admin' ? 'admin' : 'editor');
     }, [user]);
 
@@ -41,30 +41,22 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
                 : 'http://localhost:8000/api/admin/users';
 
         const payload = { name, email, role };
-        console.log('Sending invite payload:', payload);
 
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
+            const response = await axios.post(endpoint, payload, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                credentials: 'include',
-                body: JSON.stringify(payload),
+                withCredentials: true,
             });
-
-            if (!response.ok) {
-                const data = await response.json();
-                console.error('Invite error:', data);
-                throw new Error(data.message || 'Failed to send invitation');
-            }
 
             setSuccess('Invitation Sent!');
             setTimeout(() => handleClose(), 2000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
+        } catch (err: any) {
+            const message = err.response?.data?.message || err.message || 'An error occurred';
+            setError(message);
         } finally {
             setIsLoading(false);
         }
@@ -77,9 +69,6 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
                 { value: 'super_admin', label: 'Super Administrator' },
             ]
             : [{ value: 'editor', label: 'Editor' }];
-
-    console.log('Available roles:', availableRoles);
-    console.log('Current role:', role);
 
     if (!isOpen) return null;
 
@@ -100,9 +89,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
                 )}
                 <form onSubmit={handleInvite}>
                     <div className="mb-4">
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-                            Name
-                        </label>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-300">Name</label>
                         <input
                             type="text"
                             id="name"
@@ -113,9 +100,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
                         />
                     </div>
                     <div className="mb-4">
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                            Email
-                        </label>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-300">Email</label>
                         <input
                             type="email"
                             id="email"
@@ -126,16 +111,11 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ isOpen, onClose }) =>
                         />
                     </div>
                     <div className="mb-4">
-                        <label htmlFor="role" className="block text-sm font-medium text-gray-300">
-                            CMS Role
-                        </label>
+                        <label htmlFor="role" className="block text-sm font-medium text-gray-300">CMS Role</label>
                         <select
                             id="role"
                             value={role}
-                            onChange={(e) => {
-                                console.log('Selected role:', e.target.value);
-                                setRole(e.target.value);
-                            }}
+                            onChange={(e) => setRole(e.target.value)}
                             className="mt-1 block w-full px-3 py-2 bg-[#2a2a40] border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-600"
                             required
                         >
