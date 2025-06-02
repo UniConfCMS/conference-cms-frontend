@@ -1,23 +1,43 @@
-import React, { useRef, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import style from "./Wyswig.module.css";
+// @ts-ignore
+import ImageResize from 'quill-image-resize-module-react';
 
-export const Wysiwyg: React.FC = () => {
+
+interface WysiwygProps {
+  initialTitle?: string;
+  initialContent?: string;
+  onSubmit?: (data: { title: string; content: string }) => Promise<void> | void;
+  submitLabel?: string;
+  loading?: boolean;
+  mode?: "create" | "edit";
+  conferenceId?: string;
+}
+
+export const Wysiwyg: React.FC<WysiwygProps> = ({
+  initialTitle = "",
+  initialContent = "",
+  onSubmit,
+  submitLabel = "Save page",
+  loading = false,
+  mode = "create",
+  conferenceId,
+}) => {
   const [formData, setFormData] = useState({
-    title: "",
-    content: ""
+    title: initialTitle,
+    content: initialContent,
   });
   const [saving, setSaving] = useState(false);
   const quillRef = useRef<ReactQuill | null>(null);
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
 
- 
+  useEffect(() => {
+    setFormData({ title: initialTitle, content: initialContent });
+  }, [initialTitle, initialContent]);
 
   const handleTitleChange = (title: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       title,
     }));
@@ -58,6 +78,43 @@ export const Wysiwyg: React.FC = () => {
     };
   }, []);
 
+  const fileHandler = useCallback(() => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,.csv,.json,.xml,.mp3,.mp4,.avi,.mov,.mkv,.webm,.ogg,.wav,.flac,.svg,.psd,.ai,.eps,.xd,.sketch,.fig,.apk,.exe,.dmg,.iso,.tar,.gz,.tgz,.bz2,.rtf,.odt,.ods,.odp,.odg,.odf,.epub,.mobi,.azw,.fb2,.djvu,.cbz,.cbr");
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const formDataFile = new FormData();
+      formDataFile.append("file", file);
+      try {
+        const res = await fetch("http://localhost:8000/api/admin/conferences/files", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: formDataFile,
+        });
+        const data = await res.json();
+        const editor = quillRef.current?.getEditor();
+        const range = editor?.getSelection(true);
+        if (range) {
+          editor?.insertEmbed(
+            range.index,
+            "link",
+            `http://localhost:8000${data.locations}`
+          );
+          editor?.insertText(range.index, file.name, "link", `http://localhost:8000${data.locations}`);
+        }
+      } catch (err) {
+        console.error("File upload failed", err);
+        alert("File upload error");
+      }
+    };
+  }, []);
+
   const modules = {
     toolbar: {
       container: [
@@ -67,58 +124,35 @@ export const Wysiwyg: React.FC = () => {
         [{ list: "ordered" }, { list: "bullet" }],
         [{ color: [] }, { background: [] }],
         [{ align: [] }],
-        ["link", "image"],
+        ["link", "image", "file"],
         ["clean"],
       ],
       handlers: {
         image: imageHandler,
+        file: fileHandler,
       },
     },
+    imageResize: {
+      parchment: ReactQuill.Quill.import('parchment'),
+      modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
+    }
   };
+
+  ReactQuill.Quill.register('modules/imageResize', ImageResize);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
-    if (!id) {
-      console.error("Conference ID is not available");
-      alert("Conference not selected");
-      return;
-    }
-
     if (!formData.title.trim() || !formData.content.trim()) {
       alert("Please fill in all required fields");
       return;
     }
-
     setSaving(true);
-
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/conferences/${id}/pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          title: formData.title.trim(),
-          content: formData.content,
-        }),
-      });
-
-      if (response.ok) {
-        const newPage = await response.json();
-        alert("Сторінка успішно створена!");
-        setFormData({ title: "", content: "" });
-        navigate(`/conferences/${id}`, {
-          state: { selectedPage: newPage },
-        });
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Could not create a page");
+      if (onSubmit) {
+        await onSubmit({ title: formData.title.trim(), content: formData.content });
       }
     } catch (error) {
-      console.error("Error creating a page:", error);
-      alert("Error creating a page");
+      alert("Error saving page");
     } finally {
       setSaving(false);
     }
@@ -126,17 +160,14 @@ export const Wysiwyg: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Conference ID Display */}
-      <div className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50"
->
-        <span className="text-gray-700">
-          Active conference ID: <strong>{id || "Немає"}</strong>
-        </span>
-      </div>
-
-      {/* Page Creation Form */}
+      {conferenceId && (
+        <div className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50">
+          <span className="text-gray-700">
+            Active conference ID: <strong>{conferenceId || "No conference selected"}</strong>
+          </span>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Title Input */}
         <div>
           <label htmlFor="page-title" className="block text-sm font-medium text-gray-700 mb-2">
             Title of the page
@@ -146,14 +177,12 @@ export const Wysiwyg: React.FC = () => {
             id="page-title"
             value={formData.title}
             onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50" placeholder="Enter the name of the page"
+            className="w-full px-3 py-2 bg-gray-800 text-gray-100 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 disabled:opacity-50"
+            placeholder="Enter the name of the page"
             required
-            disabled={saving}
+            disabled={saving || loading}
           />
         </div>
-
-
-        {/* Content Editor */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Page content *.
@@ -164,29 +193,27 @@ export const Wysiwyg: React.FC = () => {
               theme="snow"
               modules={modules}
               value={formData.content}
-              onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+              onChange={(content) => setFormData((prev) => ({ ...prev, content }))}
               className={style.wysiwyg}
               placeholder="start writing the content of the page..."
             />
           </div>
         </div>
-
-        
         <div className="flex justify-end space-x-3">
           <button
             type="button"
             onClick={() => setFormData({ title: "", content: "" })}
             className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-            disabled={saving}
+            disabled={saving || loading}
           >
             Clean the mold
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || loading}
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {saving ? "Preservation...." : "Save page"}
+            {saving || loading ? "Saving..." : submitLabel}
           </button>
         </div>
       </form>

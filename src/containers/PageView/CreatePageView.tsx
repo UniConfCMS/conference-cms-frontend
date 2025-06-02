@@ -1,9 +1,39 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { DefaultLayout } from "../../components/DefaultLayout";
-import { Wysiwyg } from "../../components/Wyswig"; 
+import { Wysiwyg } from "../../components/Wyswig";
+
 export const CreatePageView: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+
+  const handleCreate = async (data: { title: string; content: string }) => {
+    if (!id) {
+      alert("Conference not selected");
+      return;
+    }
+    const response = await fetch(`http://localhost:8000/api/admin/conferences/${id}/pages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({
+        title: data.title,
+        content: data.content,
+      }),
+    });
+    if (response.ok) {
+      const newPage = await response.json();
+      alert("Page created successfully!");
+      navigate(`/conferences/${id}`, {
+        state: { selectedPage: newPage },
+      });
+    } else {
+      const errorData = await response.json();
+      alert(errorData.message || "Could not create a page");
+    }
+  };
 
   return (
     <DefaultLayout>
@@ -21,7 +51,12 @@ export const CreatePageView: React.FC = () => {
           </button>
         </div>
         <div className="bg-[#1a1a26] rounded-lg p-6">
-          <Wysiwyg/>
+          <Wysiwyg
+            onSubmit={handleCreate}
+            submitLabel="Save page"
+            mode="create"
+            conferenceId={id}
+          />
         </div>
       </main>
     </DefaultLayout>

@@ -12,6 +12,7 @@ import ResetPasswordModal from './components/ResetPassword';
 import { CreatePageView } from './containers/PageView/CreatePageView';
 import { CreateConferenceView } from './containers/ConferenceView/CreateConferenceView';
 import { EditConferenceView } from './containers/ConferenceView/UpdateConferenceView';
+import { UpdatePageView } from './containers/PageView/UpdatePageView';
 
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
                     <Route path="/conferences/:id/create-page" element={<CreatePageView />} />
                     <Route path="/conferences-create" element={<CreateConferenceView />} />
                     <Route path="/conferences/:id/edit" element={<EditConferenceView />} />
+                    <Route path="/conferences/:id/edit-page/:pageId" element={<UpdatePageView />} />
 
                     
                

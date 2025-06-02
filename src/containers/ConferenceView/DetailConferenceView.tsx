@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DefaultLayout } from '../../components/DefaultLayout';
@@ -5,7 +6,7 @@ import { Conference } from '../../interfaces/Conference';
 import { Page } from '../../interfaces/Page';
 import { AuthContext } from '../../context/AuthContext';
 import { DeletePageModal } from '../PageView/DeletePageModel'; 
-import axios from 'axios';
+
 
 export const DetailConferenceView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +20,7 @@ export const DetailConferenceView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isPageModalOpen, setIsPageModalOpen] = useState(false);
   const [selectedPageForDelete, setSelectedPageForDelete] = useState<Page | null>(null);
-  const [isConferenceModalOpen, setIsConferenceModalOpen] = useState(false);
+  const [isConferenceModalOpen, setIsConferenceModalOpen] = useState(false); // Стан для модального вікна конференції
 
   const canDeletePage = user?.role === 'admin' || user?.role === 'editor';
   const canDeleteConference = user?.role === 'admin';
@@ -27,97 +28,71 @@ export const DetailConferenceView: React.FC = () => {
   const fetchConferencePages = async (): Promise<void> => {
     try {
       setLoading(true);
-
+      
+      // Створюємо базові заголовки
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
-
+      
+      // Додаємо авторизацію тільки якщо є токен
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-
-      const response = await axios.get(`http://localhost:8000/api/conferences/${id}/pages`, {
+  
+      const response = await fetch(`http://localhost:8000/api/conferences/${id}/pages`, {
+        method: 'GET',
         headers,
-        withCredentials: token ? true : false,
+        credentials: token ? 'include' : 'omit',
       });
-
-      setPages(response.data);
-
-      if (response.data.length > 0) {
-        setSelectedPage(response.data[0]);
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-
+  
+      const data: Page[] = await response.json();
+      setPages(data);
+  
+      if (data.length > 0) {
+        setSelectedPage(data[0]);
+      }
+  
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error loading conference pages:', err);
-      setError(err.response?.data?.message || 'Не вдалося завантажити сторінки конференції');
+      setError('Не вдалося завантажити сторінки конференції');
     } finally {
       setLoading(false);
     }
   };
+  
 
   const fetchConferenceDetails = async (): Promise<void> => {
     try {
+      // Створюємо базові заголовки
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
-
+      
+      // Додаємо авторизацію тільки якщо є токен
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-
-      const response = await axios.get(`http://localhost:8000/api/conferences`, {
+  
+      const response = await fetch(`http://localhost:8000/api/conferences`, {
+        method: 'GET',
         headers,
-        withCredentials: token ? true : false,
+        credentials: token ? 'include' : 'omit',
       });
-
-      const conferences: Conference[] = response.data;
-      const currentConference = conferences.find((conf: Conference) => conf.id === Number(id));
-      setConference(currentConference || null);
-    } catch (err: any) {
-      console.error('Error loading conference details:', err);
-    }
-  };
-
-  const fetchCsrfToken = async (): Promise<void> => {
-    try {
-      await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
-        withCredentials: true,
-      });
-    } catch (err: any) {
-      console.error('Error fetching CSRF token:', err);
-    }
-  };
-
-  const handleDeletePage = async (pageId: number) => {
-    if (!canDeletePage) {
-      console.error('Недостатньо прав для видалення сторінки');
-      setError('Недостатньо прав для видалення сторінки');
-      return;
-    }
-
-    try {
-      await fetchCsrfToken();
-
-      await axios.delete(`http://localhost:8000/api/admin/conferences/${id}/pages/${pageId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        withCredentials: true,
-      });
-
-      setPages(pages.filter((page) => page.id !== pageId));
-      if (selectedPage?.id === pageId) {
-        setSelectedPage(pages[0] || null);
+  
+      if (response.ok) {
+        const conferences: Conference[] = await response.json();
+        const currentConference = conferences.find((conf: Conference) => conf.id === Number(id));
+        setConference(currentConference || null);
       }
-      setIsPageModalOpen(false);
-    } catch (err: any) {
-      console.error('Помилка при видаленні сторінки:', err);
-      setError(err.response?.data?.message || 'Не вдалося видалити сторінку');
+    } catch (err) {
+      console.error('Error loading conference details:', err);
     }
   };
 
@@ -137,9 +112,50 @@ export const DetailConferenceView: React.FC = () => {
     setIsPageModalOpen(true);
   };
 
+  const handleDeletePage = async (pageId: number) => {
+    if (!canDeletePage) {
+      console.error('Недостатньо прав для видалення сторінки');
+      setError('Недостатньо прав для видалення сторінки');
+      return;
+    }
+
+    try {
+      await fetch('http://localhost:8000/sanctum/csrf-cookie', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      const response = await fetch(`http://localhost:8000/api/admin/conferences/${id}/pages/${pageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
+      }
+
+      setPages(pages.filter((page) => page.id !== pageId));
+      if (selectedPage?.id === pageId) {
+        setSelectedPage(pages[0] || null);
+      }
+      setIsPageModalOpen(false);
+    } catch (error: any) {
+      console.error('Помилка при видаленні сторінки:', error);
+      setError(error.message || 'Не вдалося видалити сторінку');
+    }
+  };
+
   const openConferenceModal = () => {
     setIsConferenceModalOpen(true);
   };
+
+  
 
   if (loading) {
     return (
@@ -194,6 +210,14 @@ export const DetailConferenceView: React.FC = () => {
                   >
                     Create Page
                   </button>
+                  {canDeleteConference && (
+                    <button
+                      onClick={openConferenceModal}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
+                    >
+                      Delete Conference
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -206,6 +230,7 @@ export const DetailConferenceView: React.FC = () => {
     );
   }
 
+  // Main page layout with content
   return (
     <DefaultLayout>
       <main className="max-w-6xl mx-auto px-6 py-10">
@@ -220,13 +245,13 @@ export const DetailConferenceView: React.FC = () => {
             >
               Back
             </button>
-            {user && token && (
+            {user && token && selectedPage && (
               <>
                 <button
-                  onClick={() => navigate(`/conferences/${id}/create-page`)}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+                  onClick={() => navigate(`/conferences/${id}/edit-page/${selectedPage.id}`)}
+                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white transition-colors"
                 >
-                  Create Page
+                  Edit Page
                 </button>
               </>
             )}
@@ -234,10 +259,11 @@ export const DetailConferenceView: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Pages Menu */}
           <div className="lg:col-span-1">
             <div className="bg-[#1a1a26] rounded-lg p-4">
               <h3 className="text-lg font-semibold text-white mb-4">Pages</h3>
-              <nav className="space-y-2">
+              <nav className="space-y-2 flex-1">
                 {pages.map((page: Page) => (
                   <div key={page.id} className="flex items-center justify-between">
                     <button
@@ -261,9 +287,18 @@ export const DetailConferenceView: React.FC = () => {
                   </div>
                 ))}
               </nav>
+              {user && token && (
+                <button
+                  onClick={() => navigate(`/conferences/${id}/create-page`)}
+                  className="mt-4 w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+                >
+                  Add Page
+                </button>
+              )}
             </div>
           </div>
 
+          {/* Selected Page Content */}
           <div className="lg:col-span-3">
             {selectedPage ? (
               <div className="bg-[#1a1a26] rounded-lg p-6">
@@ -292,6 +327,7 @@ export const DetailConferenceView: React.FC = () => {
           </div>
         </div>
 
+        {/* Page Deletion Modal */}
         <DeletePageModal
           isOpen={isPageModalOpen}
           onClose={() => setIsPageModalOpen(false)}
@@ -303,4 +339,3 @@ export const DetailConferenceView: React.FC = () => {
       </main>
     </DefaultLayout>
   );
-};
