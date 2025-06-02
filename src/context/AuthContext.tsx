@@ -1,11 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-}
+import axios from 'axios';
+import { User } from '../interfaces/User';
 
 export interface AuthContextType {
     user: User | null;
@@ -13,7 +8,7 @@ export interface AuthContextType {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    updateUser: (updatedUser: User) => void; // ДОБАВЛЕНО
+    updateUser: (updatedUser: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -22,7 +17,7 @@ export const AuthContext = createContext<AuthContextType>({
     isLoading: false,
     login: async () => {},
     logout: async () => {},
-    updateUser: () => {}, // ДОБАВЛЕНО
+    updateUser: () => {},
 });
 
 interface AuthProviderProps {
@@ -34,52 +29,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
+    const fetchCsrfToken = async (): Promise<void> => {
+        try {
+            await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+                withCredentials: true,
+            });
+        } catch (err) {
+            console.error('Error fetching CSRF token:', err);
+        }
+    };
+
     const login = async (email: string, password: string): Promise<void> => {
         try {
-            await fetch('http://localhost:8000/sanctum/csrf-cookie', {
-                method: 'GET',
-                credentials: 'include',
-            });
+            await fetchCsrfToken();
 
-            const response = await fetch('http://localhost:8000/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                if (response.status === 422) {
-                    const data = await response.json();
-                    throw new Error(data.errors?.email?.[0] || 'Incorrect login data');
+            const response = await axios.post('http://localhost:8000/api/login', 
+                { email, password },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    withCredentials: true,
                 }
-                throw new Error('Failed to login');
-            }
+            );
 
-            const data = await response.json();
-            setUser(data.user);
-            setToken(data.token);
-            localStorage.setItem('token', data.token);
-        } catch (err) {
-            throw new Error(err instanceof Error ? err.message : 'An unexpected error occurred');
+            setUser(response.data.user);
+            setToken(response.data.token);
+            localStorage.setItem('token', response.data.token);
+        } catch (err: any) {
+            if (err.response?.status === 422) {
+                throw new Error(err.response.data.errors?.email?.[0] || 'Incorrect login data');
+            }
+            throw new Error(err.response?.data?.message || err.message || 'Failed to login');
         }
     };
 
     const logout = async (): Promise<void> => {
-        if (!token) return;
+        if (!token) {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('token');
+            window.location.href = "/";
+            return;
+        }
+
         try {
-            await fetch('http://localhost:8000/api/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
-                },
-                credentials: 'include',
-            });
-        } catch (err) {
+            await axios.post('http://localhost:8000/api/logout', 
+                {},
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                    },
+                    withCredentials: true,
+                }
+            );
+        } catch (err: any) {
             console.error('Logout error:', err);
         } finally {
             setUser(null);
@@ -89,7 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
-    const updateUser = (updatedUser: User) => { // ДОБАВЛЕНО
+    const updateUser = (updatedUser: User) => {
         setUser(updatedUser);
     };
 
@@ -101,30 +107,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         try {
-            await fetch('http://localhost:8000/sanctum/csrf-cookie', {
-                method: 'GET',
-                credentials: 'include',
-            });
+            await fetchCsrfToken();
 
-            const response = await fetch('http://localhost:8000/api/me', {
+            const response = await axios.get('http://localhost:8000/api/me', {
                 headers: {
                     'Authorization': `Bearer ${storedToken}`,
                     'Accept': 'application/json',
                 },
-                credentials: 'include',
+                withCredentials: true,
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                setUser(data);
-                setToken(storedToken);
-            } else {
-                console.warn(`Auth check failed: Server ${response.status}`);
-                setUser(null);
-                setToken(null);
-                localStorage.removeItem('token');
-            }
-        } catch (err) {
+            setUser(response.data);
+            setToken(storedToken);
+        } catch (err: any) {
             console.error('Auth check error:', err);
             setUser(null);
             setToken(null);

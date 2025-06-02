@@ -7,7 +7,7 @@ export interface Conference {
     year: number;
     created_by: number;
     created_at: string;
-    updated_at: string; // Optional relations
+    updated_at: string;
     creator?: User;
     pages?: Page[];
   }

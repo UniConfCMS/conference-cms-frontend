@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Conference } from "../../interfaces/Conference";
 import logoImage from "../../assets/asd.svg";
 import { Wysiwyg } from "../../components/Wyswig";
+import axios from 'axios';
 
 const testimonials = [
   {
@@ -38,24 +39,18 @@ export const MainView = () => {
   const fetchConferences = async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/conferences', {
-        method: 'GET',
+      const response = await axios.get('http://localhost:8000/api/conferences', {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: Conference[] = await response.json();
-      setConferences(data.slice(0, 3)); // Show only first 3 conferences on main page
+      setConferences(response.data.slice(0, 3)); // Show only first 3 conferences on main page
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading conferences:', err);
-      setError('Failed to load conferences');
+      setError(err.response?.data?.message || err.message || 'Failed to load conferences');
     } finally {
       setLoading(false);
     }
@@ -69,7 +64,6 @@ export const MainView = () => {
     <DefaultLayout>
       <main className="max-w-7xl mx-auto px-6 py-10">
         {/* Welcome section with logo */}
-
         <section className="text-center bg-[#1a1a26] rounded-lg px-8 py-12 mb-16">
           <div className="flex flex-col items-center mb-6">
             <div className="mb-4">
@@ -144,7 +138,7 @@ export const MainView = () => {
               {conferences.map((conference: Conference) => (
                 <article
                   key={conference.id}
-                  onClick={() => navigate(`/newspaper/${conference.id}`)}
+                  onClick={() => navigate(`/conferences/${conference.id}`)}
                   className="bg-[#1a1a26] rounded-lg p-6 shadow-md shadow-black/50 hover:bg-[#2a2a40] transition cursor-pointer"
                 >
                   <h3 className="text-xl font-semibold text-blue-500 mb-2">

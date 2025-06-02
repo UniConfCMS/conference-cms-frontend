@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 interface ForgotPasswordModalProps {
     isOpen: boolean;
@@ -20,21 +21,17 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/password/reset/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ email }),
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                console.error('Forgot password error:', data);
-                throw new Error(data.message || 'Failed to send link');
-            }
+            const response = await axios.post(
+                'http://localhost:8000/api/password/reset/send',
+                { email },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    withCredentials: true,
+                }
+            );
 
             setSuccess('Reset password link sent');
             setEmail('');
@@ -42,8 +39,9 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
                 onClose();
                 navigate('/login');
             }, 2000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
+        } catch (err: any) {
+            const message = err.response?.data?.message || err.message || 'An error occurred';
+            setError(message);
         } finally {
             setIsLoading(false);
         }

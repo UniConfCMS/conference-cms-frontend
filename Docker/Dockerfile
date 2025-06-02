@@ -6,6 +6,8 @@ COPY package*.json ./
 
 RUN npm install
 
+RUN  npm install axios
+
 RUN npm install react-router-dom @types/react-router-dom
 
 RUN npm install react-quill quill

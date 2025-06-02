@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Page } from '../../interfaces/Page';
+import axios from 'axios';
 
 interface ConferencePageProps {
   conferenceId: string; // ID конференції для фетчу сторінок
@@ -15,29 +16,22 @@ export const ConferencePage: React.FC<ConferencePageProps> = ({ conferenceId }) 
   const fetchPages = async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/conferences/${conferenceId}/pages`, {
-        method: 'GET',
+      const response = await axios.get(`http://localhost:8000/api/conferences/${conferenceId}/pages`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
-      }
-
-      const data: Page[] = await response.json();
-      console.log('Fetched pages:', data); // Лог для діагностики
-      setPages(data);
-      if (data.length > 0) {
-        setSelectedPage(data[0]); // Встановлюємо першу сторінку за замовчуванням
+      console.log('Fetched pages:', response.data); // Лог для діагностики
+      setPages(response.data);
+      if (response.data.length > 0) {
+        setSelectedPage(response.data[0]); // Встановлюємо першу сторінку за замовчуванням
       }
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading conference pages:', err);
-      setError('Failed to load conference pages');
+      setError(err.response?.data?.message || err.message || 'Failed to load conference pages');
     } finally {
       setLoading(false);
     }

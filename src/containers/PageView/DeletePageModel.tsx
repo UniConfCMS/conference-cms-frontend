@@ -26,7 +26,7 @@ export const DeletePageModal: React.FC<DeletePageModalProps> = ({
 
   const handleDelete = async () => {
     if (!canDelete) {
-      console.error('Недостатньо прав для видалення сторінки');
+      console.error('Insufficient permissions to delete the page');
       return;
     }
 
@@ -34,7 +34,7 @@ export const DeletePageModal: React.FC<DeletePageModalProps> = ({
       await onDelete(page.id);
       onClose();
     } catch (error) {
-      console.error('Помилка при видаленні сторінки:', error);
+      console.error('Error when deleting a page:', error);
     }
   };
 
@@ -51,7 +51,7 @@ export const DeletePageModal: React.FC<DeletePageModalProps> = ({
               <span className="text-2xl">⚠️</span>
             </div>
             <h3 className="text-lg font-semibold text-white">
-              Підтвердження видалення сторінки
+              confirmation of page deletion
             </h3>
           </div>
           <button
@@ -65,7 +65,7 @@ export const DeletePageModal: React.FC<DeletePageModalProps> = ({
         <div className="p-6">
           <div className="text-gray-300 mb-6">
             <p className="mb-3">
-              Ви впевнені, що хочете видалити сторінку?
+              Are you sure you want to delete the page?
             </p>
             <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
               <h4 className="font-medium text-white mb-2">Деталі сторінки:</h4>
@@ -77,11 +77,11 @@ export const DeletePageModal: React.FC<DeletePageModalProps> = ({
               </div>
             </div>
             <p className="mt-4 text-red-300 text-sm">
-              <strong>Попередження:</strong> Ця дія є незворотною.
+              <strong>Warning.:</strong> This action is irreversible.
             </p>
             {!canDelete && (
               <p className="mt-2 text-red-400 text-sm font-medium">
-                ❌ У вас недостатньо прав для видалення сторінки. Потрібна роль адміністратора або редактора.
+                ❌ You do not have sufficient permissions to delete the page. You need to be an administrator or editor.
               </p>
             )}
           </div>
@@ -106,12 +106,12 @@ export const DeletePageModal: React.FC<DeletePageModalProps> = ({
             {isDeleting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Видалення...</span>
+                <span>Removal...</span>
               </>
             ) : (
               <>
                 <span className="text-base">🗑️</span>
-                <span>Видалити</span>
+                <span>Delete</span>
               </>
             )}
           </button>
