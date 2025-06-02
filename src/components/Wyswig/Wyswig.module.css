@@ -20,3 +20,9 @@ color: rgba(255, 255, 255, 30%);
 .wysiwyg :global(.ql-editor) {
 min-height: 200px;
 }
+
+.ql-toolbar .ql-file::before {
+    content: '\1F4CE'; /* Unicode скрепки 📎 */
+    font-size: 18px;
+    line-height: 1;
+  } 

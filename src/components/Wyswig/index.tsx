@@ -4,7 +4,7 @@ import "react-quill/dist/quill.snow.css";
 import style from "./Wyswig.module.css";
 // @ts-ignore
 import ImageResize from 'quill-image-resize-module-react';
-import './WyswigFileIcon.css';
+
 
 interface WysiwygProps {
   initialTitle?: string;
