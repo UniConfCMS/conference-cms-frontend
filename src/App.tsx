@@ -14,7 +14,6 @@ import { CreateConferenceView } from './containers/ConferenceView/CreateConferen
 import { EditConferenceView } from './containers/ConferenceView/UpdateConferenceView';
 import { UpdatePageView } from './containers/PageView/UpdatePageView';
 
-
 function App() {
     return (
         <AuthProvider>
@@ -29,9 +28,6 @@ function App() {
                     <Route path="/conferences/:id/edit" element={<EditConferenceView />} />
                     <Route path="/conferences/:id/edit-page/:pageId" element={<UpdatePageView />} />
 
-                    
-               
-                    
                     <Route path="/panel" element={<UserPanel />} />
                     <Route path="/set-password" element={<SetPasswordView />} />
                 

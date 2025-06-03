@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DefaultLayout } from '../../components/DefaultLayout';
 import { Wysiwyg } from '../../components/Wyswig';
 import { Page } from '../../interfaces/Page';
+import axios from 'axios';
 
 export const UpdatePageView: React.FC = () => {
   const { id, pageId } = useParams<{ id: string; pageId: string }>();
@@ -13,39 +14,46 @@ export const UpdatePageView: React.FC = () => {
 
   useEffect(() => {
     const fetchPage = async () => {
+      if (!id || !pageId) return;
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/conferences/${id}/pages`);
-      if (response.ok) {
-        const pages: Page[] = await response.json();
-        const found = pages.find((p) => p.id === Number(pageId));
+      try {
+        const response = await axios.get<Page[]>(`http://localhost:8000/api/conferences/${id}/pages`);
+        const found = response.data.find((p) => p.id === Number(pageId));
         setPage(found || null);
+      } catch (error) {
+        console.error('Failed to load page data:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
+
     fetchPage();
   }, [id, pageId]);
 
   const handleUpdate = async (data: { title: string; content: string }) => {
     if (!id || !pageId) return;
     setSaving(true);
-    const response = await fetch(`http://localhost:8000/api/admin/conferences/${id}/pages/${pageId}/content`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify({
-        title: data.title,
-        content: data.content,
-      }),
-    });
-    setSaving(false);
-    if (response.ok) {
+    try {
+      await axios.patch(
+        `http://localhost:8000/api/admin/conferences/${id}/pages/${pageId}/content`,
+        {
+          title: data.title,
+          content: data.content,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
       alert('Page updated!');
       navigate(`/conferences/${id}`);
-    } else {
-      const errorData = await response.json();
-      alert(errorData.message || 'Could not update page');
+    } catch (error: any) {
+      console.error('Error updating page:', error);
+      const message = error.response?.data?.message || 'Could not update page';
+      alert(message);
+    } finally {
+      setSaving(false);
     }
   };
 
