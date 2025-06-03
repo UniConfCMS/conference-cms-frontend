@@ -217,29 +217,6 @@ export const MainView = () => {
             ))}
           </div>
         </section>
-
-        {/* Subscribe section */}
-        <section className="bg-[#1a1a26] rounded-lg p-8 mx-auto w-full">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold mb-4">Subscribe for Updates</h2>
-            <p className="text-gray-400">
-              Get the latest conference announcements and research event notifications straight to your inbox.
-            </p>
-          </div>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Your email"
-              className="flex-1 px-4 py-3 rounded bg-[#2a2a40] border border-gray-600 focus:outline-none focus:border-blue-600 text-white"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3 bg-blue-600 rounded hover:bg-blue-700 transition font-semibold"
-            >
-              Subscribe
-            </button>
-          </form>
-        </section>
       </main>
     </DefaultLayout>
   );

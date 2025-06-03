@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Page } from '../../interfaces/Page';
 import axios from 'axios';
+import { DefaultLayout } from '../../components/DefaultLayout';
 
 interface ConferencePageProps {
   conferenceId: string; // ID конференції для фетчу сторінок
@@ -72,58 +73,62 @@ export const ConferencePage: React.FC<ConferencePageProps> = ({ conferenceId }) 
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
-      {/* Pages Menu */}
-      <div className="lg:w-1/4">
-        <div className="bg-[#1a1a26] rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Pages</h3>
-          {pages.length === 0 ? (
-            <p className="text-gray-400">No pages found for this conference</p>
-          ) : (
-            <nav className="space-y-2">
-              {pages.map((page) => (
-                <button
-                  key={page.id}
-                  onClick={() => handlePageSelect(page)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                    selectedPage?.id === page.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  }`}
-                >
-                  {page.title}
-                </button>
-              ))}
-            </nav>
-          )}
-        </div>
-      </div>
+    <DefaultLayout>
+      <main className="max-w-6xl mx-auto px-6 py-10">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Pages Menu */}
+          <div className="lg:w-1/4">
+            <div className="bg-[#1a1a26] rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-white mb-4">Pages</h3>
+              {pages.length === 0 ? (
+                <p className="text-gray-400">No pages found for this conference</p>
+              ) : (
+                <nav className="space-y-2">
+                  {pages.map((page) => (
+                    <button
+                      key={page.id}
+                      onClick={() => handlePageSelect(page)}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                        selectedPage?.id === page.id
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`}
+                    >
+                      {page.title}
+                    </button>
+                  ))}
+                </nav>
+              )}
+            </div>
+          </div>
 
-      {/* Selected Page Content */}
-      <div className="lg:w-3/4">
-        {selectedPage ? (
-          <div className="bg-[#1a1a26] rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">{selectedPage.title}</h2>
-            {selectedPage.created_at && (
-              <time className="block mb-6 text-gray-400 text-sm">
-                {new Date(selectedPage.created_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </time>
+          {/* Selected Page Content */}
+          <div className="lg:w-3/4">
+            {selectedPage ? (
+              <div className="bg-[#1a1a26] rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-white mb-4">{selectedPage.title}</h2>
+                {selectedPage.created_at && (
+                  <time className="block mb-6 text-gray-400 text-sm">
+                    {new Date(selectedPage.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </time>
+                )}
+                <div
+                  className="text-gray-300 prose prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: selectedPage.content }}
+                />
+              </div>
+            ) : (
+              <div className="bg-[#1a1a26] rounded-lg p-6">
+                <p className="text-gray-400">Select a page to view content</p>
+              </div>
             )}
-            <div
-              className="text-gray-300 prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: selectedPage.content }}
-            />
           </div>
-        ) : (
-          <div className="bg-[#1a1a26] rounded-lg p-6">
-            <p className="text-gray-400">Select a page to view content</p>
-          </div>
-        )}
-      </div>
-    </div>
+        </div> 
+      </main>
+    </DefaultLayout>
   );
 };

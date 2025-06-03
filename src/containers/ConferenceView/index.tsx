@@ -17,10 +17,12 @@ export const ConferenceView: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [selectedConference, setSelectedConference] = useState<Conference | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  
-  // Search and sorting state
+
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
+
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const conferencesPerPage = 9;
 
   const isAdmin = user?.role === "admin";
 
@@ -47,14 +49,12 @@ export const ConferenceView: React.FC = () => {
     }
   };
 
-  // Filtered and sorted conferences
   const filteredAndSortedConferences = useMemo(() => {
     let filtered = conferences.filter(conference =>
       conference.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       conference.year?.toString().includes(searchTerm)
     );
 
-    // Sort conferences
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case 'title-asc':
@@ -70,6 +70,17 @@ export const ConferenceView: React.FC = () => {
       }
     });
   }, [conferences, searchTerm, sortBy]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedConferences.length / conferencesPerPage);
+  const indexOfLastConference = currentPage * conferencesPerPage;
+  const indexOfFirstConference = indexOfLastConference - conferencesPerPage;
+  const currentConferences = filteredAndSortedConferences.slice(indexOfFirstConference, indexOfLastConference);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Прокрутка до верху сторінки
+  };
 
   const handleDeleteClick = (e: React.MouseEvent, conference: Conference) => {
     e.stopPropagation();
@@ -107,6 +118,10 @@ export const ConferenceView: React.FC = () => {
       setConferences((prev) => prev.filter((conf) => conf.id !== conferenceId));
       setIsDeleteModalOpen(false);
       setSelectedConference(null);
+      // Adjust current page if necessary
+      if (currentConferences.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (err: any) {
       console.error("Error deleting conference:", err);
       let errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || "Failed to delete conference";
@@ -133,11 +148,16 @@ export const ConferenceView: React.FC = () => {
 
   const clearSearch = () => {
     setSearchTerm('');
+    setCurrentPage(1); // Скидаємо на першу сторінку при очищенні пошуку
   };
 
   useEffect(() => {
     fetchConferences();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1); // Скидаємо на першу сторінку при зміні пошуку або сортування
+  }, [searchTerm, sortBy]);
 
   if (loading) {
     return (
@@ -282,60 +302,108 @@ export const ConferenceView: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredAndSortedConferences.map((conference: Conference) => (
-              <article
-                key={conference.id}
-                className="bg-[#1a1a26] rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow relative group"
-              >
-                {isAdmin && (
-                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
-                    <button
-                      onClick={() => navigate(`/conferences/${conference.id}`)}
-                      className="p-2 bg-blue-600 hover:bg-blue-700 rounded-md transition-colors duration-200 text-white"
-                      title="View Conference"
-                    >
-                      👁️
-                    </button>
-                    <button
-                      onClick={(e) => handleEditClick(e, conference)}
-                      className="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-md transition-colors duration-200 text-white"
-                      title="Edit Conference"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteClick(e, conference)}
-                      className="p-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200 text-white"
-                      title="Delete Conference"
-                      disabled={isDeleting}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                )}
-
-                <div
-                  onClick={() => navigate(`/conferences/${conference.id}`)}
-                  className="cursor-pointer"
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {currentConferences.map((conference: Conference) => (
+                <article
+                  key={conference.id}
+                  className="bg-[#1a1a26] rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow relative group"
                 >
-                  <h2 className={`text-xl font-semibold mb-2 text-white ${isAdmin ? "pr-16" : ""}`}>
-                    {conference.title || "No Title"}
-                  </h2>
-                  <time className="block mb-4 text-gray-400 text-sm">
-                    {conference.created_at
-                      ? new Date(conference.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : "No Date"}
-                  </time>
-                  <p className="text-gray-300">Conference Year: {conference.year}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+                  {isAdmin && (
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
+                      <button
+                        onClick={() => navigate(`/conferences/${conference.id}`)}
+                        className="p-2 bg-blue-600 hover:bg-blue-700 rounded-md transition-colors duration-200 text-white"
+                        title="View Conference"
+                      >
+                        👁️
+                      </button>
+                      <button
+                        onClick={(e) => handleEditClick(e, conference)}
+                        className="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-md transition-colors duration-200 text-white"
+                        title="Edit Conference"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, conference)}
+                        className="p-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200 text-white"
+                        title="Delete Conference"
+                        disabled={isDeleting}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
+
+                  <div
+                    onClick={() => navigate(`/conferences/${conference.id}`)}
+                    className="cursor-pointer"
+                  >
+                    <h2 className={`text-xl font-semibold mb-2 text-white ${isAdmin ? "pr-16" : ""}`}>
+                      {conference.title || "No Title"}
+                    </h2>
+                    <time className="block mb-4 text-gray-400 text-sm">
+                      {conference.created_at
+                        ? new Date(conference.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "No Date"}
+                    </time>
+                    <p className="text-gray-300">Conference Year: {conference.year}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* Pagination Navigation */}
+            {totalPages > 1 && (
+              <nav className="mt-8 flex justify-center items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-md text-white ${
+                    currentPage === 1
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  Previous
+                </button>
+
+                {[...Array(totalPages)].map((_, index) => {
+                  const page = index + 1;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-4 py-2 rounded-md ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-md text-white ${
+                    currentPage === totalPages
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  Next
+                </button>
+              </nav>
+            )}
+          </>
         )}
 
         <DeleteConferenceModal

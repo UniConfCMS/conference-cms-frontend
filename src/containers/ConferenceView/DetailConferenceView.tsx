@@ -7,6 +7,76 @@ import { AuthContext } from '../../context/AuthContext';
 import { DeletePageModal } from '../PageView/DeletePageModel';
 import axios from 'axios';
 
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
+interface EditorRecord {
+  editor_id: number;
+  user: User;
+}
+
+interface AddEditorModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  allEditors: User[];
+  assignedEditors: EditorRecord[];
+  onAddEditor: (userId: number) => void;
+  onRemoveEditor: (editorId: number) => void;
+}
+
+const AddEditorModal: React.FC<AddEditorModalProps> = ({ isOpen, onClose, allEditors, assignedEditors, onAddEditor, onRemoveEditor }) => {
+  if (!isOpen) return null;
+
+  const assignedEditorUserIds = assignedEditors.map((e) => e.user.id);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-[#1a1a26] p-6 rounded-lg max-w-md w-full">
+        <h2 className="text-xl font-bold text-white mb-4">Manage Editors</h2>
+        {allEditors.length === 0 ? (
+          <p className="text-gray-400">No editors available</p>
+        ) : (
+          <ul className="space-y-2">
+            {allEditors.map((editor) => (
+              <li key={editor.id} className="flex justify-between items-center">
+                <span className="text-gray-300">{editor.name} ({editor.email})</span>
+                {assignedEditorUserIds.includes(editor.id) ? (
+                  <button
+                    onClick={() => {
+                      const editorRecord = assignedEditors.find((e) => e.user.id === editor.id);
+                      if (editorRecord) onRemoveEditor(editorRecord.editor_id);
+                    }}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-white"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onAddEditor(editor.id)}
+                    className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-white"
+                  >
+                    Add
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        <button
+          onClick={onClose}
+          className="mt-4 w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded text-white"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const DetailConferenceView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -15,14 +85,19 @@ export const DetailConferenceView: React.FC = () => {
   const [conference, setConference] = useState<Conference | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [selectedPage, setSelectedPage] = useState<Page | null>(null);
+  const [editors, setEditors] = useState<EditorRecord[]>([]);
+  const [availableEditors, setAvailableEditors] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isPageModalOpen, setIsPageModalOpen] = useState(false);
+  const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
   const [selectedPageForDelete, setSelectedPageForDelete] = useState<Page | null>(null);
   const [isConferenceModalOpen, setIsConferenceModalOpen] = useState(false);
+  const [isEditorForConference, setIsEditorForConference] = useState<boolean>(false);
 
-  const canDeletePage = user?.role === 'admin' || user?.role === 'editor';
-  const canDeleteConference = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
+  const canManagePages = isAdmin || isEditorForConference;
+  const canDeleteConference = isAdmin;
 
   const fetchCsrfToken = async (): Promise<void> => {
     try {
@@ -31,6 +106,29 @@ export const DetailConferenceView: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Error fetching CSRF token:', err);
+    }
+  };
+
+  const fetchEditorStatus = async (): Promise<void> => {
+    if (!user || !token || user.role !== 'editor') {
+      setIsEditorForConference(false);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`http://localhost:8000/api/editors/check/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        withCredentials: true,
+      });
+
+      setIsEditorForConference(response.data.isEditor);
+    } catch (err: any) {
+      console.error('Error checking editor status:', err);
+      setIsEditorForConference(false);
     }
   };
 
@@ -61,7 +159,7 @@ export const DetailConferenceView: React.FC = () => {
       setError(null);
     } catch (err: any) {
       console.error('Error loading conference pages:', err);
-      setError(err.response?.data?.message || 'Не вдалося завантажити сторінки конференції');
+      setError(err.response?.data?.message || 'Failed to load conference pages');
     } finally {
       setLoading(false);
     }
@@ -87,14 +185,108 @@ export const DetailConferenceView: React.FC = () => {
       const currentConference = conferences.find((conf: Conference) => conf.id === Number(id));
       setConference(currentConference || null);
     } catch (err: any) {
-      console.error('Error loading conference details:', err);
+      console.error('Error loading conference:', err);
+    }
+  };
+
+  const fetchEditors = async (): Promise<void> => {
+    if (!isAdmin || !token) return;
+
+    try {
+      const response = await axios.get(`http://localhost:8000/api/admin/conferences/${id}/editors`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        withCredentials: true,
+      });
+
+      const validEditors = response.data.filter((editor: EditorRecord) => editor.user && editor.user.name);
+      setEditors(validEditors);
+    } catch (err: any) {
+      console.error('Error loading editors:', err);
+      setError(err.response?.data?.message || 'Failed to load editors');
+    }
+  };
+
+  const fetchAvailableEditors = async (): Promise<void> => {
+    if (!isAdmin || !token) return;
+
+    try {
+      const response = await axios.get(`http://localhost:8000/api/users/editors`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        withCredentials: true,
+      });
+
+      const validEditors = response.data.filter((editor: User) => editor && editor.name);
+      setAvailableEditors(validEditors);
+    } catch (err: any) {
+      console.error('Error loading available editors:', err);
+      setError(err.response?.data?.message || 'Failed to load available editors');
+    }
+  };
+
+  const handleAddEditor = async (userId: number) => {
+    if (!isAdmin || !token) return;
+
+    try {
+      await fetchCsrfToken();
+
+      await axios.post(
+        `http://localhost:8000/api/admin/editors/assign`,
+        {
+          user_id: userId,
+          conference_id: id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: true,
+        }
+      );
+
+      await fetchEditors();
+      setIsEditorModalOpen(false);
+    } catch (err: any) {
+      console.error('Error adding editor:', err);
+      setError(err.response?.data?.message || 'Failed to add editor');
+    }
+  };
+
+  const handleRemoveEditor = async (editorRecordId: number) => {
+    if (!isAdmin || !token) return;
+
+    try {
+      await fetchCsrfToken();
+
+      await axios.delete(`http://localhost:8000/api/admin/editors/${editorRecordId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        withCredentials: true,
+      });
+
+      await fetchEditors();
+      setIsEditorModalOpen(false);
+    } catch (err: any) {
+      console.error('Error removing editor:', err);
+      setError(err.response?.data?.message || 'Failed to remove editor');
     }
   };
 
   const handleDeletePage = async (pageId: number) => {
-    if (!canDeletePage) {
-      console.error('Недостатньо прав для видалення сторінки');
-      setError('Недостатньо прав для видалення сторінки');
+    if (!canManagePages) {
+      setError('Insufficient permissions to delete page');
       return;
     }
 
@@ -116,17 +308,22 @@ export const DetailConferenceView: React.FC = () => {
       }
       setIsPageModalOpen(false);
     } catch (err: any) {
-      console.error('Помилка при видаленні сторінки:', err);
-      setError(err.response?.data?.message || 'Не вдалося видалити сторінку');
+      console.error('Error deleting page:', err);
+      setError(err.response?.data?.message || 'Failed to delete page');
     }
   };
 
   useEffect(() => {
     if (id) {
+      if (isAdmin) {
+        fetchEditors();
+        fetchAvailableEditors();
+      }
       fetchConferencePages();
       fetchConferenceDetails();
+      fetchEditorStatus();
     }
-  }, [id, token]);
+  }, [id, token, user, isAdmin]);
 
   const handlePageSelect = (page: Page): void => {
     setSelectedPage(page);
@@ -139,6 +336,10 @@ export const DetailConferenceView: React.FC = () => {
 
   const openConferenceModal = () => {
     setIsConferenceModalOpen(true);
+  };
+
+  const openEditorModal = () => {
+    setIsEditorModalOpen(true);
   };
 
   if (loading) {
@@ -163,7 +364,7 @@ export const DetailConferenceView: React.FC = () => {
               onClick={() => navigate('/conferences')}
               className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 text-white"
             >
-              Back to conferences
+              Back to Conferences
             </button>
           </div>
         </main>
@@ -176,9 +377,27 @@ export const DetailConferenceView: React.FC = () => {
       <DefaultLayout>
         <main className="max-w-6xl mx-auto px-6 py-10">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-white">
-              {conference?.title || 'Conference'}
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                {conference?.title || 'Conference'}
+              </h1>
+              {isAdmin && (
+                <div className="text-sm text-gray-400 mt-1">
+                  {editors.length > 0 ? (
+                    <button onClick={openEditorModal} className="underline hover:text-gray-200">
+                      Editors: {editors.map((e) => e.user.name).join(', ')}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={openEditorModal}
+                      className="underline hover:text-gray-200"
+                    >
+                      No editors, add one
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => navigate('/conferences')}
@@ -186,29 +405,35 @@ export const DetailConferenceView: React.FC = () => {
               >
                 Back
               </button>
-              {user && token && (
-                <>
-                  <button
-                    onClick={() => navigate(`/conferences/${id}/create-page`)}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
-                  >
-                    Create Page
-                  </button>
-                  {canDeleteConference && (
-                    <button
-                      onClick={openConferenceModal}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
-                    >
-                      Delete Conference
-                    </button>
-                  )}
-                </>
+              {user && token && canManagePages && (
+                <button
+                  onClick={() => navigate(`/conferences/${id}/create-page`)}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+                >
+                  Create Page
+                </button>
+              )}
+              {canDeleteConference && (
+                <button
+                  onClick={openConferenceModal}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
+                >
+                  Delete Conference
+                </button>
               )}
             </div>
           </div>
           <div className="text-center py-10">
             <p className="text-gray-400">No pages available for this conference</p>
           </div>
+          <AddEditorModal
+            isOpen={isEditorModalOpen}
+            onClose={() => setIsEditorModalOpen(false)}
+            allEditors={availableEditors}
+            assignedEditors={editors}
+            onAddEditor={handleAddEditor}
+            onRemoveEditor={handleRemoveEditor}
+          />
         </main>
       </DefaultLayout>
     );
@@ -218,9 +443,27 @@ export const DetailConferenceView: React.FC = () => {
     <DefaultLayout>
       <main className="max-w-6xl mx-auto px-6 py-9">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-white">
-            {conference?.title || 'Conference Pages'}
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold text-white">
+              {conference?.title || 'Conference Pages'}
+            </h1>
+            {isAdmin && (
+              <div className="text-sm text-gray-400 mt-1">
+                {editors.length > 0 ? (
+                  <button onClick={openEditorModal} className="underline hover:text-gray-200">
+                    Editors: {editors.map((e) => e.user.name).join(', ')}
+                  </button>
+                ) : (
+                  <button
+                    onClick={openEditorModal}
+                    className="underline hover:text-gray-200"
+                  >
+                    No editors, add one
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex gap-3">
             <button
               onClick={() => navigate('/conferences')}
@@ -228,15 +471,13 @@ export const DetailConferenceView: React.FC = () => {
             >
               Back
             </button>
-            {user && token && selectedPage && (
-              <>
-                <button
-                  onClick={() => navigate(`/conferences/${id}/edit-page/${selectedPage.id}`)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
-                >
-                  Edit Page
-                </button>
-              </>
+            {user && token && selectedPage && canManagePages && (
+              <button
+                onClick={() => navigate(`/conferences/${id}/edit-page/${selectedPage.id}`)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
+              >
+                Edit Page
+              </button>
             )}
           </div>
         </div>
@@ -258,7 +499,7 @@ export const DetailConferenceView: React.FC = () => {
                     >
                       {page.title}
                     </button>
-                    {canDeletePage && (
+                    {canManagePages && (
                       <button
                         onClick={() => openPageModal(page)}
                         className="px-0 py-1 text-sm font-medium text-white bg-red-600 border border-red-500 rounded-md hover:bg-red-700 transition-colors"
@@ -269,7 +510,7 @@ export const DetailConferenceView: React.FC = () => {
                   </div>
                 ))}
               </nav>
-              {user && token && (
+              {user && token && canManagePages && (
                 <button
                   onClick={() => navigate(`/conferences/${id}/create-page`)}
                   className="mt-4 w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
@@ -315,6 +556,14 @@ export const DetailConferenceView: React.FC = () => {
           onDelete={handleDeletePage}
           isDeleting={false}
           userRole={user?.role}
+        />
+        <AddEditorModal
+          isOpen={isEditorModalOpen}
+          onClose={() => setIsEditorModalOpen(false)}
+          allEditors={availableEditors}
+          assignedEditors={editors}
+          onAddEditor={handleAddEditor}
+          onRemoveEditor={handleRemoveEditor}
         />
       </main>
     </DefaultLayout>
