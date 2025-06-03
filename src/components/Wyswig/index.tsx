@@ -2,9 +2,10 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import style from "./Wyswig.module.css";
+import "./WyswigFileIcon.css"; 
 // @ts-ignore
 import ImageResize from 'quill-image-resize-module-react';
-
+import axios from 'axios';
 
 interface WysiwygProps {
   initialTitle?: string;
@@ -43,6 +44,16 @@ export const Wysiwyg: React.FC<WysiwygProps> = ({
     }));
   };
 
+  const fetchCsrfToken = async (): Promise<void> => {
+    try {
+      await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+        withCredentials: true,
+      });
+    } catch (err) {
+      console.error('Error fetching CSRF token:', err);
+    }
+  };
+
   const imageHandler = useCallback(() => {
     const input = document.createElement("input");
     input.setAttribute("type", "file");
@@ -57,23 +68,27 @@ export const Wysiwyg: React.FC<WysiwygProps> = ({
       formDataImg.append("file", file);
 
       try {
-        const res = await fetch("http://localhost:8000/api/admin/conferences/files", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: formDataImg,
-        });
+        await fetchCsrfToken();
 
-        const data = await res.json();
+        const response = await axios.post("http://localhost:8000/api/admin/conferences/files", 
+          formDataImg,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              'Accept': 'application/json',
+            },
+            withCredentials: true,
+          }
+        );
+
         const editor = quillRef.current?.getEditor();
         const range = editor?.getSelection(true);
         if (range) {
-          editor?.insertEmbed(range.index, "image", `http://localhost:8000${data.locations}`);
+          editor?.insertEmbed(range.index, "image", `http://localhost:8000${response.data.locations}`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Image upload failed", err);
-        alert("Image loading error");
+        alert(err.response?.data?.message || "Image loading error");
       }
     };
   }, []);
@@ -87,30 +102,37 @@ export const Wysiwyg: React.FC<WysiwygProps> = ({
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
+
       const formDataFile = new FormData();
       formDataFile.append("file", file);
+
       try {
-        const res = await fetch("http://localhost:8000/api/admin/conferences/files", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: formDataFile,
-        });
-        const data = await res.json();
+        await fetchCsrfToken();
+
+        const response = await axios.post("http://localhost:8000/api/admin/conferences/files", 
+          formDataFile,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              'Accept': 'application/json',
+            },
+            withCredentials: true,
+          }
+        );
+
         const editor = quillRef.current?.getEditor();
         const range = editor?.getSelection(true);
         if (range) {
           editor?.insertEmbed(
             range.index,
             "link",
-            `http://localhost:8000${data.locations}`
+            `http://localhost:8000${response.data.locations}`
           );
-          editor?.insertText(range.index, file.name, "link", `http://localhost:8000${data.locations}`);
+          editor?.insertText(range.index, file.name, "link", `http://localhost:8000${response.data.locations}`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("File upload failed", err);
-        alert("File upload error");
+        alert(err.response?.data?.message || "File upload error");
       }
     };
   }, []);
@@ -134,7 +156,7 @@ export const Wysiwyg: React.FC<WysiwygProps> = ({
     },
     imageResize: {
       parchment: ReactQuill.Quill.import('parchment'),
-      modules: [ 'Resize', 'DisplaySize', 'Toolbar' ]
+      modules: ['Resize', 'DisplaySize', 'Toolbar']
     }
   };
 
