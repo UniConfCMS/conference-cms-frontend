@@ -12,8 +12,10 @@ interface User {
 }
 
 const UserPanel: React.FC = () => {
-    const { user, logout, token, updateUser } = useContext(AuthContext);
+    const { user, logout, token, updateUser, isLoading } = useContext(AuthContext);
     const navigate = useNavigate();
+
+    // Все состояния
     const [isInviteModalOpen, setIsInviteModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState<boolean>(false);
@@ -28,16 +30,14 @@ const UserPanel: React.FC = () => {
     const [selectedRole, setSelectedRole] = useState<string>('admin');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoadingModal, setIsLoadingModal] = useState<boolean>(false); // Переименовал isLoading, чтобы избежать конфликта
     const [users, setUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-    if (!user) return null;
-
-    // Загрузка пользователей для автодополнения
+    // Эффект для загрузки пользователей
     useEffect(() => {
-        if (user.role === 'super_admin' && isAssignRoleModalOpen) {
+        if (user && user.role === 'super_admin' && isAssignRoleModalOpen) {
             const fetchUsers = async () => {
                 try {
                     const response = await axios.get('http://localhost:8000/api/super-admin/users', {
@@ -57,9 +57,30 @@ const UserPanel: React.FC = () => {
 
             fetchUsers();
         }
-    }, [isAssignRoleModalOpen, token, user.role]);
+    }, [isAssignRoleModalOpen, token, user]);
 
-    // Фильтрация пользователей
+    // Если данные загружаются, показываем спиннер
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[#1a1a26] flex items-center justify-center pt-20">
+                <div className="flex items-center space-x-2">
+                    <svg className="animate-spin h-8 w-8 text-blue-500" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                        <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75" />
+                    </svg>
+                    <span className="text-gray-300 text-lg">Loading...</span>
+                </div>
+            </div>
+        );
+    }
+
+    // Проверка user после всех хуков
+    if (!user) {
+        navigate('/login');
+        return null;
+    }
+
+    // Функции обработки
     const handleEmailInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSelectedEmail(value);
@@ -73,26 +94,22 @@ const UserPanel: React.FC = () => {
         }
     };
 
-    // Выбор пользователя
     const handleSelectUser = (selectedUser: User) => {
         setSelectedEmail(selectedUser.email);
         setSelectedUserId(selectedUser.id);
         setFilteredUsers([]);
     };
 
-    // Сброс состояний для Invite User
     const closeInviteModal = () => {
         setIsInviteModalOpen(false);
     };
 
-    // Сброс состояний для Delete Account
     const closeDeleteModal = () => {
         setIsDeleteModalOpen(false);
         setError(null);
         setSuccess(null);
     };
 
-    // Сброс состояний для Assign Role
     const closeAssignRoleModal = () => {
         setIsAssignRoleModalOpen(false);
         setError(null);
@@ -103,7 +120,6 @@ const UserPanel: React.FC = () => {
         setFilteredUsers(users);
     };
 
-    // Сброс состояний для Change Name
     const closeChangeNameModal = () => {
         setIsChangeNameModalOpen(false);
         setError(null);
@@ -111,7 +127,6 @@ const UserPanel: React.FC = () => {
         setName('');
     };
 
-    // Сброс состояний для Change Password
     const closeChangePasswordModal = () => {
         setIsChangePasswordModalOpen(false);
         setError(null);
@@ -125,7 +140,7 @@ const UserPanel: React.FC = () => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
-        setIsLoading(true);
+        setIsLoadingModal(true);
 
         try {
             await axios.delete('http://localhost:8000/api/user/delete', {
@@ -140,12 +155,12 @@ const UserPanel: React.FC = () => {
             setSuccess('Account deleted successfully!');
             setTimeout(() => {
                 logout();
-                navigate('/login');
+                window.location.href = "/";
             }, 2000);
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || 'An error occurred');
         } finally {
-            setIsLoading(false);
+            setIsLoadingModal(false);
         }
     };
 
@@ -153,16 +168,16 @@ const UserPanel: React.FC = () => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
-        setIsLoading(true);
+        setIsLoadingModal(true);
 
         if (!selectedUserId) {
             setError('Please select a user');
-            setIsLoading(false);
+            setIsLoadingModal(false);
             return;
         }
 
         try {
-            await axios.patch(`http://localhost:8000/api/super-admin/users/${selectedUserId}/assign-role`, 
+            await axios.patch(`http://localhost:8000/api/super-admin/users/${selectedUserId}/assign-role`,
                 { role: selectedRole },
                 {
                     headers: {
@@ -179,7 +194,7 @@ const UserPanel: React.FC = () => {
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || 'An error occurred');
         } finally {
-            setIsLoading(false);
+            setIsLoadingModal(false);
         }
     };
 
@@ -187,16 +202,16 @@ const UserPanel: React.FC = () => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
-        setIsLoading(true);
+        setIsLoadingModal(true);
 
         if (!name.trim()) {
             setError('Name cannot be empty');
-            setIsLoading(false);
+            setIsLoadingModal(false);
             return;
         }
 
         try {
-            const response = await axios.put(`http://localhost:8000/api/admin/users/${user.id}`, 
+            const response = await axios.put(`http://localhost:8000/api/admin/users/${user.id}`,
                 { name },
                 {
                     headers: {
@@ -214,7 +229,7 @@ const UserPanel: React.FC = () => {
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || 'An error occurred');
         } finally {
-            setIsLoading(false);
+            setIsLoadingModal(false);
         }
     };
 
@@ -222,16 +237,16 @@ const UserPanel: React.FC = () => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
-        setIsLoading(true);
+        setIsLoadingModal(true);
 
         if (newPassword !== passwordConfirmation) {
             setError('Passwords do not match');
-            setIsLoading(false);
+            setIsLoadingModal(false);
             return;
         }
 
         try {
-            await axios.patch('http://localhost:8000/api/user/password', 
+            await axios.patch('http://localhost:8000/api/user/password',
                 {
                     current_password: currentPassword,
                     password: newPassword,
@@ -252,7 +267,7 @@ const UserPanel: React.FC = () => {
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || 'An error occurred');
         } finally {
-            setIsLoading(false);
+            setIsLoadingModal(false);
         }
     };
 
@@ -353,7 +368,7 @@ const UserPanel: React.FC = () => {
                             <p className="text-gray-300 mb-4">
                                 Are you sure you want to delete your account? This action cannot be undone.
                             </p>
-                            {isLoading && (
+                            {isLoadingModal && (
                                 <div className="flex items-center space-x-2 mb-4">
                                     <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -368,14 +383,14 @@ const UserPanel: React.FC = () => {
                                         type="button"
                                         onClick={closeDeleteModal}
                                         className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
-                                        disabled={isLoading}
+                                        disabled={isLoadingModal}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition"
-                                        disabled={isLoading}
+                                        disabled={isLoadingModal}
                                     >
                                         Delete
                                     </button>
@@ -392,11 +407,11 @@ const UserPanel: React.FC = () => {
                             <h2 className="text-2xl font-bold mb-4 text-white">Assign Role</h2>
                             {error && <p className="text-red-500 mb-4">{error}</p>}
                             {success && <p className="text-green-600 mb-4">{success}</p>}
-                            {isLoading && (
+                            {isLoadingModal && (
                                 <div className="flex items-center space-x-2 mb-4">
                                     <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4" />
                                     </svg>
                                     <span className="text-gray-400">Assigning...</span>
                                 </div>
@@ -450,14 +465,14 @@ const UserPanel: React.FC = () => {
                                         type="button"
                                         onClick={closeAssignRoleModal}
                                         className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
-                                        disabled={isLoading}
+                                        disabled={isLoadingModal}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
-                                        disabled={isLoading}
+                                        disabled={isLoadingModal}
                                     >
                                         Assign
                                     </button>
@@ -474,7 +489,7 @@ const UserPanel: React.FC = () => {
                             <h2 className="text-2xl font-bold mb-4 text-white">Change Name</h2>
                             {error && <p className="text-red-500 mb-4">{error}</p>}
                             {success && <p className="text-green-600 mb-4">{success}</p>}
-                            {isLoading && (
+                            {isLoadingModal && (
                                 <div className="flex items-center space-x-2 mb-4">
                                     <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -502,14 +517,14 @@ const UserPanel: React.FC = () => {
                                         type="button"
                                         onClick={closeChangeNameModal}
                                         className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
-                                        disabled={isLoading}
+                                        disabled={isLoadingModal}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
-                                        disabled={isLoading}
+                                        disabled={isLoadingModal}
                                     >
                                         Save
                                     </button>
@@ -526,7 +541,7 @@ const UserPanel: React.FC = () => {
                             <h2 className="text-2xl font-bold mb-4 text-white">Change Password</h2>
                             {error && <p className="text-red-500 mb-4">{error}</p>}
                             {success && <p className="text-green-600 mb-4">{success}</p>}
-                            {isLoading && (
+                            {isLoadingModal && (
                                 <div className="flex items-center space-x-2 mb-4">
                                     <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -582,14 +597,14 @@ const UserPanel: React.FC = () => {
                                         type="button"
                                         onClick={closeChangePasswordModal}
                                         className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition"
-                                        disabled={isLoading}
+                                        disabled={isLoadingModal}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition"
-                                        disabled={isLoading}
+                                        disabled={isLoadingModal}
                                     >
                                         Save
                                     </button>
