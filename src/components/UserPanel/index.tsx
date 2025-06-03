@@ -155,7 +155,7 @@ const UserPanel: React.FC = () => {
             setSuccess('Account deleted successfully!');
             setTimeout(() => {
                 logout();
-                navigate('/login');
+                window.location.href = "/";
             }, 2000);
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || 'An error occurred');
