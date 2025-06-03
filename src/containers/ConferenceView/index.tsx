@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { DefaultLayout } from "../../components/DefaultLayout";
 import { useNavigate } from "react-router-dom";
 import { Conference } from "../../interfaces/Conference";
 import { DeleteConferenceModal } from "./DelateConferenceModel";
 import { AuthContext } from "../../context/AuthContext";
 import axios from 'axios';
+
+type SortOption = 'title-asc' | 'title-desc' | 'year-asc' | 'year-desc' | 'date-asc' | 'date-desc';
 
 export const ConferenceView: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +17,10 @@ export const ConferenceView: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [selectedConference, setSelectedConference] = useState<Conference | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  
+  // Search and sorting state
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [sortBy, setSortBy] = useState<SortOption>('date-desc');
 
   const isAdmin = user?.role === "admin";
 
@@ -40,6 +46,30 @@ export const ConferenceView: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Filtered and sorted conferences
+  const filteredAndSortedConferences = useMemo(() => {
+    let filtered = conferences.filter(conference =>
+      conference.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conference.year?.toString().includes(searchTerm)
+    );
+
+    // Sort conferences
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'title-asc':
+          return (a.title || '').localeCompare(b.title || '');
+        case 'title-desc':
+          return (b.title || '').localeCompare(a.title || '');
+        case 'year-asc':
+          return (a.year || 0) - (b.year || 0);
+        case 'year-desc':
+          return (b.year || 0) - (a.year || 0);
+        default:
+          return 0;
+      }
+    });
+  }, [conferences, searchTerm, sortBy]);
 
   const handleDeleteClick = (e: React.MouseEvent, conference: Conference) => {
     e.stopPropagation();
@@ -101,6 +131,10 @@ export const ConferenceView: React.FC = () => {
     setError(null);
   };
 
+  const clearSearch = () => {
+    setSearchTerm('');
+  };
+
   useEffect(() => {
     fetchConferences();
   }, []);
@@ -135,6 +169,68 @@ export const ConferenceView: React.FC = () => {
           )}
         </div>
 
+        {/* Search and Filter Section */}
+        <div className="mb-8 bg-[#1a1a26] rounded-lg p-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Search Conferences
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by title or year..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="lg:w-64">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Sort By
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="title-asc">Title (A to Z)</option>
+                <option value="title-desc">Title (Z to A)</option>
+                <option value="year-desc">Year (High to Low)</option>
+                <option value="year-asc">Year (Low to High)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Results Info */}
+          <div className="mt-4 text-sm text-gray-400">
+            {searchTerm ? (
+              <>
+                Showing {filteredAndSortedConferences.length} of {conferences.length} conferences
+                {filteredAndSortedConferences.length !== conferences.length && (
+                  <span className="ml-2 text-blue-400">
+                    (filtered by "{searchTerm}")
+                  </span>
+                )}
+              </>
+            ) : (
+              `Showing all ${conferences.length} conferences`
+            )}
+          </div>
+        </div>
+
         {error && (
           <div className="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg">
             <div className="flex items-center justify-between">
@@ -160,19 +256,34 @@ export const ConferenceView: React.FC = () => {
           </div>
         )}
 
-        {conferences.length === 0 ? (
+        {filteredAndSortedConferences.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-gray-400">No conferences found</p>
-            <button
-              onClick={fetchConferences}
-              className="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition text-white"
-            >
-              Refresh
-            </button>
+            {searchTerm ? (
+              <>
+                <p className="text-gray-400 mb-2">No conferences match your search</p>
+                <p className="text-gray-500 text-sm mb-4">Try adjusting your search terms</p>
+                <button
+                  onClick={clearSearch}
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition text-white mr-2"
+                >
+                  Clear Search
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-400">No conferences found</p>
+                <button
+                  onClick={fetchConferences}
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition text-white"
+                >
+                  Refresh
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {conferences.map((conference: Conference) => (
+            {filteredAndSortedConferences.map((conference: Conference) => (
               <article
                 key={conference.id}
                 className="bg-[#1a1a26] rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow relative group"
