@@ -68,10 +68,10 @@ export const DeletePageModal: React.FC<DeletePageModalProps> = ({
               Are you sure you want to delete the page?
             </p>
             <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Деталі сторінки:</h4>
+              <h4 className="font-medium text-white mb-2">Page details:</h4>
               <div className="space-y-1 text-sm">
                 <p>
-                  <span className="text-gray-400">Назва:</span>{' '}
+                  <span className="text-gray-400">Title.:</span>{' '}
                   <span className="text-white">{page.title}</span>
                 </p>
               </div>
