@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import InviteUserModal from '../InviteUserModal/index';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { User } from '../../interfaces/User';
 const UserPanel: React.FC = () => {
     const { user, logout, token, updateUser, isLoading } = useContext(AuthContext);
     const navigate = useNavigate();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // States
     const [isInviteModalOpen, setIsInviteModalOpen] = useState<boolean>(false);
@@ -27,6 +28,7 @@ const UserPanel: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+    const [isUploading, setIsUploading] = useState<boolean>(false);
 
     // Fetch users for super_admin
     useEffect(() => {
@@ -268,6 +270,61 @@ const UserPanel: React.FC = () => {
         navigate('/admin');
     };
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check if file is an image
+        if (!file.type.startsWith('image/')) {
+            setError('Please upload an image file');
+            return;
+        }
+
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Image size should be less than 5MB');
+            return;
+        }
+
+        setIsUploading(true);
+        setError(null);
+        setSuccess(null);
+
+        const formData = new FormData();
+        formData.append('profile_picture', file);
+
+        try {
+            const response = await axios.post(
+                `http://localhost:8000/api/users/${user.id}/profile-picture`,
+                formData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    withCredentials: true,
+                }
+            );
+
+            // Получаем свежие данные пользователя
+            const meResponse = await axios.get('http://localhost:8000/api/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                },
+                withCredentials: true,
+            });
+            updateUser(meResponse.data);
+            setSuccess('Profile picture updated successfully!');
+        } catch (err: any) {
+            console.error('Upload error:', err);
+            setError(err.response?.data?.message || err.message || 'An error occurred while uploading the image');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100 pt-16 px-4 sm:px-6 lg:px-8">
             <div className="max-w-5xl mx-auto">
@@ -299,17 +356,52 @@ const UserPanel: React.FC = () => {
                 </div>
 
                 {/* User Profile Card */}
-                <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-8 transition-all duration-300 hover:shadow-xl">
+                <div className="bg-gray-800 rounded-xl p-6 mb-8">
                     <div className="flex items-center space-x-6">
-                        <div className="w-20 h-14 sm:h-20 rounded-full bg-indigo-500 flex items-center justify-center text-2xl font-semibold sm:font-bold text-white">
-                            {user.name.charAt(0).toUpperCase()}
+                        <div className="w-20 h-20 rounded-full bg-indigo-500 flex items-center justify-center text-2xl font-semibold text-white overflow-hidden">
+                            {user.profilePicture ? (
+                                <img 
+                                    src={user.profilePicture} 
+                                    alt={user.name} 
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                user.name.charAt(0).toUpperCase()
+                            )}
                         </div>
-                        <div>
-                            <h2 className="text-2xl font-semibold text-white dark:text-gray-900">{user.name}</h2>
+                        <div className="flex-1">
+                            <h2 className="text-2xl font-semibold text-white">{user.name}</h2>
                             <p className="text-gray-400">{user.email}</p>
                             <p className="text-gray-400 capitalize">Role: {user.role.replace('_', ' ')}</p>
                         </div>
+                        <div>
+                            <label 
+                                htmlFor="profile-picture-upload" 
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 cursor-pointer inline-block"
+                            >
+                                Change Profile Picture
+                            </label>
+                            <input
+                                id="profile-picture-upload"
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                accept="image/*"
+                                className="hidden"
+                            />
+                        </div>
                     </div>
+                    {isUploading && (
+                        <div className="mt-4 flex items-center space-x-2">
+                            <svg className="animate-spin h-5 w-5 text-indigo-400" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            <span className="text-gray-300">Uploading...</span>
+                        </div>
+                    )}
+                    {error && <p className="mt-4 text-red-400">{error}</p>}
+                    {success && <p className="mt-4 text-green-400">{success}</p>}
                 </div>
 
                 {/* Actions Section */}
