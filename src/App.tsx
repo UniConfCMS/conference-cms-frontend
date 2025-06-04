@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MainView } from './containers/MainView';
 import { FAQView } from './containers/FaqView';
 import { AuthProvider } from './context/AuthContext';
@@ -13,6 +13,9 @@ import { CreatePageView } from './containers/PageView/CreatePageView';
 import { CreateConferenceView } from './containers/ConferenceView/CreateConferenceView';
 import { EditConferenceView } from './containers/ConferenceView/UpdateConferenceView';
 import { UpdatePageView } from './containers/PageView/UpdatePageView';
+import AdminPanel from './containers/AdminPanelView';
+import Users from './containers/AdminPanelView/UserAdminView';
+import Conferences from './containers/AdminPanelView/ConfernceAdminView';
 
 function App() {
     return (
@@ -30,7 +33,11 @@ function App() {
 
                     <Route path="/panel" element={<UserPanel />} />
                     <Route path="/set-password" element={<SetPasswordView />} />
-                
+                    <Route path="/admin" element={<AdminPanel />}>
+                        <Route path="users" element={<Users />} />
+                        <Route path="conferences" element={<Conferences />} />
+                        <Route index element={<Navigate to="users" replace />} />
+                    </Route>
                     <Route
                         path="/forgot-password"
                         element={
