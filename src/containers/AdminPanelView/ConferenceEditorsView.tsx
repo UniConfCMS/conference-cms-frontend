@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { Editor } from '../../interfaces/Editros'; // Припускаю, що це все ще правильний шлях, хоча є помилка в назві (Editros -> Editors)
+import { Editor } from '../../interfaces/Editros';
 import { User } from '../../interfaces/User';
 import axios from 'axios';
 
@@ -72,12 +72,10 @@ const ConferenceEditors: React.FC<ConferenceEditorsProps> = ({ conferenceId, onC
   };
 
   useEffect(() => {
-    fetchData(); // Початкове завантаження даних
+    fetchData(); 
 
-    // Встановлюємо інтервал для періодичного оновлення (наприклад, кожні 10 секунд)
-    const intervalId = setInterval(fetchData, 10000); // 10000 мс = 10 секунд
+    const intervalId = setInterval(fetchData, 10000);
 
-    // Очищаємо інтервал, коли компонент розмонтовується
     return () => clearInterval(intervalId);
   }, [conferenceId, token]);
 
@@ -107,7 +105,6 @@ const ConferenceEditors: React.FC<ConferenceEditorsProps> = ({ conferenceId, onC
       );
       setSuccess('Editor assigned successfully');
       setSelectedEditorId(null);
-      // Оновлюємо списки, викликаючи fetchData
       await fetchData();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to assign editor');
@@ -127,7 +124,6 @@ const ConferenceEditors: React.FC<ConferenceEditorsProps> = ({ conferenceId, onC
         withCredentials: true,
       });
       setSuccess('Editor removed successfully');
-      // Оновлюємо списки, викликаючи fetchData
       await fetchData();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to remove editor');

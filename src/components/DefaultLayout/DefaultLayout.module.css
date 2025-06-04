@@ -1,5 +1,14 @@
+.headerBlockContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .mainBlock {
-  margin-top: 50px;
+  flex-grow: 1;
+  /* margin-top: 50px; */ /* Consider removing or adjusting if header height is dynamic or handled differently */
   padding-left: 40px;
   padding-right: 40px;
+  padding-top: 20px; /* Added some top padding for content separation */
+  padding-bottom: 20px; /* Added some bottom padding for content separation */
 }

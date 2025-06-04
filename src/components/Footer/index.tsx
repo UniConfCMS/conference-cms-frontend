@@ -1,19 +1,16 @@
-import React from "react";
+import React from 'react';
 
-export const Footer = () => {
+export const Footer: React.FC = () => {
   return (
-    <footer className="py-6 px-6 border-t border-gray-600 mt-10">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
-        <div className="text-sm mb-4 md:mb-0 select-none">
-          © 2025 NEWSPAPER GROUP SPACE. Все права защищены.
-        </div>
-
-        <div className="flex space-x-6 text-sm font-medium">
-          <a href="/" className="hover:text-gray-300 transition">Home</a>
-          <a href="/faq" className="hover:text-gray-300 transition">FAQ</a>
-          <a href="/conferences" className="hover:text-gray-300 transition">Conferences</a>
-        </div>
+    <footer className="flex items-baseline justify-around px-6 py-6 border-gray border-gray-600 border-t bg-[#1a1a26] mt-auto">
+      <div className="text-sm text-gray-400 select-none">
+        © {new Date().getFullYear()} ANIMAL SCIENCE DAYS.
       </div>
+      <nav className="flex items-center space-x-6 text-sm">
+        <a href="/" className="hover:text-gray-300 text-gray-400 transition">Home</a>
+        <a href="/faq/" className="hover:text-gray-300 text-gray-400 transition">FAQ</a>
+        <a href="/conferences/" className="hover:text-gray-300 text-gray-400 transition">Conferences</a>
+      </nav>
     </footer>
   );
 };
