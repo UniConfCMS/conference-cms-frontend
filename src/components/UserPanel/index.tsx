@@ -264,6 +264,10 @@ const UserPanel: React.FC = () => {
         }
     };
 
+    const handleNavigateToAdminPanel = () => {
+        navigate('/admin');
+    };
+
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100 pt-16 px-4 sm:px-6 lg:px-8">
             <div className="max-w-5xl mx-auto">
@@ -290,18 +294,18 @@ const UserPanel: React.FC = () => {
                                 />
                             </svg>
                         </button>
-                        <h1 className="text-3xl font-bold text-white tracking-tight">User Panel</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-white">User Panel</h1>
                     </div>
                 </div>
 
                 {/* User Profile Card */}
-                <div className="bg-gray-800 p-6 rounded-xl shadow-lg mb-8 transition-all duration-300 hover:shadow-xl">
+                <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-8 transition-all duration-300 hover:shadow-xl">
                     <div className="flex items-center space-x-6">
-                        <div className="w-20 h-20 rounded-full bg-indigo-500 flex items-center justify-center text-2xl font-bold text-white">
+                        <div className="w-20 h-14 sm:h-20 rounded-full bg-indigo-500 flex items-center justify-center text-2xl font-semibold sm:font-bold text-white">
                             {user.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                            <h2 className="text-2xl font-semibold text-white">{user.name}</h2>
+                            <h2 className="text-2xl font-semibold text-white dark:text-gray-900">{user.name}</h2>
                             <p className="text-gray-400">{user.email}</p>
                             <p className="text-gray-400 capitalize">Role: {user.role.replace('_', ' ')}</p>
                         </div>
@@ -313,12 +317,20 @@ const UserPanel: React.FC = () => {
                     <h3 className="text-xl font-semibold text-white mb-6">Account Actions</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {(user.role === 'admin' || user.role === 'super_admin') && (
-                            <button
-                                onClick={() => setIsInviteModalOpen(true)}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-                            >
-                                Invite New User
-                            </button>
+                            <>
+                                <button
+                                    onClick={() => setIsInviteModalOpen(true)}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                                >
+                                    Invite New User
+                                </button>
+                                <button
+                                    onClick={handleNavigateToAdminPanel}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                                >
+                                    Go to Admin Panel
+                                </button>
+                            </>
                         )}
                         {user.role === 'super_admin' && (
                             <button
