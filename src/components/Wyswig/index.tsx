@@ -88,7 +88,7 @@ export const Wysiwyg: React.FC<WysiwygProps> = ({
         }
       } catch (err: any) {
         console.error("Image upload failed", err);
-        alert(err.response?.data?.message || "Image loading error");
+        alert(err.response?.data?.message || "Image loading zxc@scs.comerror");
       }
     };
   }, []);

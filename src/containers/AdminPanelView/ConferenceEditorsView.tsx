@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { Editor } from '../../interfaces/Editros';
@@ -72,11 +73,7 @@ const ConferenceEditors: React.FC<ConferenceEditorsProps> = ({ conferenceId, onC
   };
 
   useEffect(() => {
-    fetchData(); 
-
-    const intervalId = setInterval(fetchData, 10000);
-
-    return () => clearInterval(intervalId);
+    fetchData(); // Fetch data only on mount or when conferenceId/token changes
   }, [conferenceId, token]);
 
   const handleAssignEditor = async (e: React.FormEvent) => {
@@ -105,7 +102,7 @@ const ConferenceEditors: React.FC<ConferenceEditorsProps> = ({ conferenceId, onC
       );
       setSuccess('Editor assigned successfully');
       setSelectedEditorId(null);
-      await fetchData();
+      await fetchData(); // Refresh data after assigning
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to assign editor');
     } finally {
@@ -124,7 +121,7 @@ const ConferenceEditors: React.FC<ConferenceEditorsProps> = ({ conferenceId, onC
         withCredentials: true,
       });
       setSuccess('Editor removed successfully');
-      await fetchData();
+      await fetchData(); // Refresh data after deleting
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to remove editor');
     }
