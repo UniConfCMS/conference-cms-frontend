@@ -5,6 +5,7 @@ import { Conference } from '../../interfaces/Conference';
 import { Page } from '../../interfaces/Page';
 import { AuthContext } from '../../context/AuthContext';
 import { DeletePageModal } from '../PageView/DeletePageModel';
+import { DeleteConferenceModal } from './DelateConferenceModel';
 import axios from 'axios';
 
 interface User {
@@ -94,6 +95,7 @@ export const DetailConferenceView: React.FC = () => {
   const [selectedPageForDelete, setSelectedPageForDelete] = useState<Page | null>(null);
   const [isConferenceModalOpen, setIsConferenceModalOpen] = useState(false);
   const [isEditorForConference, setIsEditorForConference] = useState<boolean>(false);
+  const [isDeletingConference, setIsDeletingConference] = useState<boolean>(false); // New state for deletion loading
 
   const isAdmin = user?.role === 'admin';
   const canManagePages = isAdmin || isEditorForConference;
@@ -313,6 +315,35 @@ export const DetailConferenceView: React.FC = () => {
     }
   };
 
+  const handleDeleteConference = async (conferenceId: number) => {
+    if (!canDeleteConference || !token) {
+      setError('Insufficient permissions to delete conference');
+      return;
+    }
+
+    try {
+      setIsDeletingConference(true);
+      await fetchCsrfToken();
+
+      await axios.delete(`http://localhost:8000/api/admin/conferences/${conferenceId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        withCredentials: true,
+      });
+
+      navigate('/conferences'); // Redirect to conferences list after deletion
+    } catch (err: any) {
+      console.error('Error deleting conference:', err);
+      setError(err.response?.data?.message || 'Failed to delete conference');
+    } finally {
+      setIsDeletingConference(false);
+      setIsConferenceModalOpen(false);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       if (isAdmin) {
@@ -434,6 +465,14 @@ export const DetailConferenceView: React.FC = () => {
             onAddEditor={handleAddEditor}
             onRemoveEditor={handleRemoveEditor}
           />
+          <DeleteConferenceModal
+            isOpen={isConferenceModalOpen}
+            onClose={() => setIsConferenceModalOpen(false)}
+            conference={conference}
+            onDelete={handleDeleteConference}
+            isDeleting={isDeletingConference}
+            userRole={user?.role}
+          />
         </main>
       </DefaultLayout>
     );
@@ -477,6 +516,14 @@ export const DetailConferenceView: React.FC = () => {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
               >
                 Edit Page
+              </button>
+            )}
+            {canDeleteConference && (
+              <button
+                onClick={openConferenceModal}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
+              >
+                Delete Conference
               </button>
             )}
           </div>
@@ -564,6 +611,14 @@ export const DetailConferenceView: React.FC = () => {
           assignedEditors={editors}
           onAddEditor={handleAddEditor}
           onRemoveEditor={handleRemoveEditor}
+        />
+        <DeleteConferenceModal
+          isOpen={isConferenceModalOpen}
+          onClose={() => setIsConferenceModalOpen(false)}
+          conference={conference}
+          onDelete={handleDeleteConference}
+          isDeleting={isDeletingConference}
+          userRole={user?.role}
         />
       </main>
     </DefaultLayout>
