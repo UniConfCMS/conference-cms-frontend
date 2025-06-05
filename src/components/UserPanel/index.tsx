@@ -1,6 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import InviteUserModal from '../InviteUserModal/index';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { User } from '../../interfaces/User';
@@ -11,7 +10,6 @@ const UserPanel: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // States
-    const [isInviteModalOpen, setIsInviteModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState<boolean>(false);
     const [isChangeNameModalOpen, setIsChangeNameModalOpen] = useState<boolean>(false);
@@ -93,10 +91,6 @@ const UserPanel: React.FC = () => {
         setSelectedEmail(selectedUser.email);
         setSelectedUserId(selectedUser.id);
         setFilteredUsers([]);
-    };
-
-    const closeInviteModal = () => {
-        setIsInviteModalOpen(false);
     };
 
     const closeDeleteModal = () => {
@@ -360,9 +354,9 @@ const UserPanel: React.FC = () => {
                     <div className="flex items-center space-x-6">
                         <div className="w-20 h-20 rounded-full bg-indigo-500 flex items-center justify-center text-2xl font-semibold text-white overflow-hidden">
                             {user.profilePicture ? (
-                                <img 
-                                    src={user.profilePicture} 
-                                    alt={user.name} 
+                                <img
+                                    src={user.profilePicture}
+                                    alt={user.name}
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
@@ -375,8 +369,8 @@ const UserPanel: React.FC = () => {
                             <p className="text-gray-400 capitalize">Role: {user.role.replace('_', ' ')}</p>
                         </div>
                         <div>
-                            <label 
-                                htmlFor="profile-picture-upload" 
+                            <label
+                                htmlFor="profile-picture-upload"
                                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 cursor-pointer inline-block"
                             >
                                 Change Profile Picture
@@ -409,20 +403,12 @@ const UserPanel: React.FC = () => {
                     <h3 className="text-xl font-semibold text-white mb-6">Account Actions</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {(user.role === 'admin' || user.role === 'super_admin') && (
-                            <>
-                                <button
-                                    onClick={() => setIsInviteModalOpen(true)}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-                                >
-                                    Invite New User
-                                </button>
-                                <button
-                                    onClick={handleNavigateToAdminPanel}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-                                >
-                                    Go to Admin Panel
-                                </button>
-                            </>
+                            <button
+                                onClick={handleNavigateToAdminPanel}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                            >
+                                Go to Admin Panel
+                            </button>
                         )}
                         {user.role === 'super_admin' && (
                             <button
@@ -458,12 +444,6 @@ const UserPanel: React.FC = () => {
                         </button>
                     </div>
                 </div>
-
-                {/* Invite User Modal */}
-                <InviteUserModal
-                    isOpen={isInviteModalOpen}
-                    onClose={closeInviteModal}
-                />
 
                 {/* Delete Account Modal */}
                 {isDeleteModalOpen && (
@@ -564,7 +544,6 @@ const UserPanel: React.FC = () => {
                                     >
                                         <option value="editor">Editor</option>
                                         <option value="admin">Administrator</option>
-                                        <option value="super_admin">Super Administrator</option>
                                     </select>
                                 </div>
                                 <div className="flex justify-end space-x-3">
